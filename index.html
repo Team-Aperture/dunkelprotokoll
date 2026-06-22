@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#17191d" />
+<title>Die Kalibrierungsanlage: Dunkelprotokoll</title>
+
+<!--
+  ============================================================================
+   Hallo, SDBH-R.
+   Schoen, dass du wieder im Quelltext stoeberst. Wir haben dich vermisst.
+   Diesmal ist nichts kaputt - es ist nur dunkel. Kein Spoiler hier unten,
+   Ehrenwort. Viel Glueck im Sturm.
+                                                       - Die Verwaltung
+
+   (Hinweis fuer alle Mitlesenden: Der Quelltext verraet das Labyrinth nicht.
+    Die Ebenendaten sind absichtlich kodiert abgelegt - das Dunkel gilt fuer
+    alle gleichermassen. Lesen oder Debuggen bringt keinen Spielvorteil.)
+  ============================================================================
+-->
+
+<style>
+  :root{
+    --bg:#17191d; --bg2:#0b0d10; --panel:#13161b; --line:#272b32;
+    --green:#62ff9c; --red:#ff4a4a; --amber:#ffb347; --blue:#5fa8ff;
+    --txt:#c6cfd6; --dim:#6c7681;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); overflow:hidden;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; color:var(--txt); }
+  #app{ position:fixed; inset:0; }
+  canvas{ display:block; }
+
+  /* ---------- HUD ---------- */
+  #hud{ position:fixed; inset:0; pointer-events:none; z-index:10;
+    padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right))
+            max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); }
+  .panel{ background:rgba(11,13,16,.55); border:1px solid var(--line); border-radius:8px;
+    backdrop-filter:blur(2px); }
+
+  #pages{ position:absolute; top:12px; left:12px; padding:8px 11px; font-size:13px; }
+  #pages .lbl{ color:var(--dim); font-size:10px; letter-spacing:.18em; }
+  #pages .cnt{ color:var(--green); font-size:20px; font-weight:bold; }
+  #notebook{ margin-top:6px; color:var(--dim); font-size:12px; letter-spacing:.12em; }
+  #notebook b{ color:var(--green); font-weight:normal; }
+
+  /* metronome */
+  #metronome{ position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    padding:7px 12px 9px; text-align:center; min-width:150px; }
+  #metroDots{ display:flex; gap:9px; justify-content:center; }
+  .md{ width:11px; height:11px; border-radius:50%; background:#222831; border:1px solid #313945;
+    transition:background .05s, box-shadow .05s, transform .05s; }
+  .md.down{ width:13px; height:13px; }
+  .md.on{ background:var(--green); box-shadow:0 0 9px var(--green); }
+  #metronome.imminent .md{ border-color:var(--amber); }
+  #metronome.imminent .md.on{ background:var(--amber); box-shadow:0 0 11px var(--amber); }
+  #metronome.flash .md{ background:#fff !important; box-shadow:0 0 14px #fff !important; }
+  #metroBar{ height:4px; background:#222831; border-radius:3px; margin-top:8px; overflow:hidden; }
+  #metroFill{ height:100%; width:0%; background:var(--green); transition:width .08s linear; }
+  #metronome.imminent #metroFill{ background:var(--amber); }
+  #metroLabel{ margin-top:5px; font-size:10px; letter-spacing:.16em; color:var(--dim); }
+  #metroLabel b{ color:var(--txt); font-weight:normal; }
+
+  /* minimap */
+  #minimapWrap{ position:absolute; top:12px; right:12px; padding:7px; }
+  #minimapWrap .lbl{ color:var(--dim); font-size:9px; letter-spacing:.18em; text-align:center; margin-bottom:5px; }
+  #minimap{ display:block; width:132px; height:132px; image-rendering:pixelated; border-radius:4px; }
+
+  /* toast / banner */
+  #toast{ position:absolute; left:50%; bottom:23%; transform:translateX(-50%);
+    display:flex; flex-direction:column; gap:7px; align-items:center; width:90%; max-width:420px; }
+  .toast{ pointer-events:none; padding:8px 14px; border-radius:7px; font-size:13px; text-align:center;
+    background:rgba(11,13,16,.82); border:1px solid var(--line); animation:tin .25s ease both; }
+  .toast.good{ border-color:var(--green); color:var(--green); }
+  .toast.warn{ border-color:var(--amber); color:var(--amber); }
+  .toast.bad{ border-color:var(--red); color:var(--red); }
+  @keyframes tin{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* desktop hint */
+  #hint{ position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+    font-size:11px; color:var(--dim); letter-spacing:.05em; padding:7px 12px; }
+  #hint b{ color:var(--txt); font-weight:normal; }
+
+  /* top-right small controls */
+  #tools{ position:absolute; top:12px; right:160px; display:flex; gap:7px; }
+  .tbtn{ pointer-events:auto; cursor:pointer; background:rgba(11,13,16,.6); border:1px solid var(--line);
+    color:var(--txt); border-radius:7px; width:34px; height:34px; font-size:15px; display:flex;
+    align-items:center; justify-content:center; }
+  .tbtn:active{ transform:scale(.94); }
+  .tbtn.off{ color:var(--dim); }
+
+  /* mobile D-pad */
+  #dpad{ position:absolute; right:18px; bottom:max(18px,env(safe-area-inset-bottom)); display:none;
+    width:188px; height:188px; }
+  #dpad.show{ display:block; }
+  .dbtn{ position:absolute; pointer-events:auto; width:60px; height:60px; border-radius:12px;
+    background:rgba(18,22,27,.78); border:1px solid var(--line); color:var(--txt);
+    font-size:22px; display:flex; align-items:center; justify-content:center; user-select:none;
+    touch-action:none; }
+  .dbtn:active{ background:rgba(98,255,156,.18); border-color:var(--green); }
+  .dbtn.up{ left:64px; top:0; } .dbtn.down{ left:64px; bottom:0; }
+  .dbtn.left{ left:0; top:64px; } .dbtn.right{ right:0; top:64px; }
+  .dbtn.mid{ left:64px; top:64px; font-size:13px; letter-spacing:.04em; color:var(--green);
+    border-color:#2c5e40; }
+  .dbtn.mid:active{ background:rgba(98,255,156,.28); }
+
+  /* flash + vignette overlays */
+  #flash{ position:fixed; inset:0; background:#dfe9ff; opacity:0; pointer-events:none; z-index:8; }
+  #vignette{ position:fixed; inset:0; pointer-events:none; z-index:9; opacity:0;
+    box-shadow:inset 0 0 120px 30px var(--red); transition:opacity .12s; }
+
+  /* full-screen overlays (start / success) */
+  .screen{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 35%, #15181d 0%, #090a0c 80%); padding:24px; }
+  .screen .card{ max-width:540px; width:100%; text-align:center; }
+  .screen.hidden{ display:none; }
+  .eyebrow{ color:var(--dim); letter-spacing:.32em; font-size:11px; }
+  h1{ font-size:clamp(22px,5vw,34px); margin:.35em 0 .1em; letter-spacing:.04em; }
+  h1 .sub{ display:block; color:var(--green); font-size:.55em; letter-spacing:.34em; margin-top:.5em; }
+  .screen p{ color:var(--txt); font-size:14px; line-height:1.6; }
+  .screen .muted{ color:var(--dim); font-size:12.5px; }
+  .ctrlgrid{ display:inline-grid; grid-template-columns:auto auto; gap:4px 16px; text-align:left;
+    margin:14px auto; font-size:13px; color:var(--dim); }
+  .ctrlgrid b{ color:var(--txt); font-weight:normal; }
+  .btn{ pointer-events:auto; cursor:pointer; display:inline-block; margin-top:16px; padding:13px 26px;
+    background:transparent; border:1px solid var(--green); color:var(--green); border-radius:8px;
+    font-family:inherit; font-size:15px; letter-spacing:.12em; }
+  .btn:active{ background:rgba(98,255,156,.15); }
+  .btn.ghost{ border-color:var(--line); color:var(--dim); margin-left:10px; }
+  .coords{ font-size:clamp(18px,4.4vw,27px); color:var(--green); letter-spacing:.06em;
+    margin:18px 0; text-shadow:0 0 18px rgba(98,255,156,.5); word-spacing:.1em; }
+  label.snd{ display:inline-flex; gap:8px; align-items:center; color:var(--dim); font-size:12.5px;
+    margin-top:14px; pointer-events:auto; cursor:pointer; }
+
+  @media (max-width:560px){
+    #tools{ right:12px; top:152px; }
+    #minimap{ width:108px; height:108px; }
+    #hint{ display:none; }
+  }
+  @media (prefers-reduced-motion: reduce){ .toast{ animation:none; } }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud">
+    <div id="pages" class="panel">
+      <div class="lbl">SEITEN</div>
+      <div><span class="cnt" id="pageCount">0</span><span style="color:var(--dim)"> / <span id="pageTotal">0</span></span></div>
+      <div id="notebook"></div>
+    </div>
+
+    <div id="metronome" class="panel" title="Visuelles Metronom - der Blitz schlaegt auf die 1 jedes zweiten Taktes ein">
+      <div id="metroDots"><span class="md down"></span><span class="md"></span><span class="md"></span><span class="md"></span></div>
+      <div id="metroBar"><div id="metroFill"></div></div>
+      <div id="metroLabel">BLITZ in <b id="flashCount">-</b></div>
+    </div>
+
+    <div id="minimapWrap" class="panel">
+      <div class="lbl">SEKTORKARTE</div>
+      <canvas id="minimap" width="66" height="66"></canvas>
+    </div>
+
+    <div id="tools">
+      <div class="tbtn off" id="soundBtn" title="Ton an/aus">&#128263;</div>
+      <div class="tbtn" id="restartBtn" title="Ebene neu starten">&#8635;</div>
+    </div>
+
+    <div id="toast"></div>
+    <div id="hint" class="panel"><b>W/&uarr;</b> vor &middot; <b>S/&darr;</b> zur&uuml;ck &middot; <b>A/D</b> drehen &middot; <b>Leertaste</b> bedienen</div>
+
+    <div id="dpad">
+      <div class="dbtn up"    data-act="forward">&#9650;</div>
+      <div class="dbtn down"  data-act="back">&#9660;</div>
+      <div class="dbtn left"  data-act="left">&#8634;</div>
+      <div class="dbtn right" data-act="right">&#8635;</div>
+      <div class="dbtn mid"   data-act="interact">DRUCK</div>
+    </div>
+  </div>
+
+  <div id="flash"></div>
+  <div id="vignette"></div>
+
+  <!-- Start screen -->
+  <div id="startScreen" class="screen">
+    <div class="card">
+      <div class="eyebrow">KALIBRIERUNGSANLAGE</div>
+      <h1>DUNKELPROTOKOLL<span class="sub">DIE KALIBRIERUNGSANLAGE</span></h1>
+      <p>Der Sturm hat das Umspannwerk getroffen. In der Anlage ist der Strom weg &mdash;
+         du siehst nur, wenn ein Blitz durch die Oberlichter schl&auml;gt.</p>
+      <p class="muted">Taste dich durch die Korridore. Dr&uuml;cke Schalter, um T&uuml;ren zu &ouml;ffnen.
+         Sammle <b style="color:var(--green)">alle Seiten</b> ein und erreiche den Ausgang &mdash;
+         erst dann gibt die Anlage die Koordinaten frei.</p>
+      <div class="ctrlgrid">
+        <span>Vorw&auml;rts / R&uuml;ckw&auml;rts</span><b>W&nbsp;S &nbsp;oder&nbsp; &uarr;&nbsp;&darr;</b>
+        <span>Drehen links / rechts</span><b>A&nbsp;D &nbsp;oder&nbsp; &larr;&nbsp;&rarr;</b>
+        <span>Schalter bedienen</span><b>Leertaste</b>
+        <span>Mobil</span><b>Steuerkreuz unten rechts</b>
+      </div>
+      <p class="muted">Kein Ton n&ouml;tig: das <b style="color:var(--txt)">visuelle Metronom</b> (100&nbsp;BPM, 4/4)
+         k&uuml;ndigt jeden Blitz an &mdash; er trifft auf die <b style="color:var(--txt)">1</b> jedes zweiten Taktes.</p>
+      <label class="snd"><input type="checkbox" id="sndChk" /> Sturmger&auml;usch laden (optional, <code>audio/storm.mp3</code>)</label>
+      <div><button class="btn" id="startBtn">ANLAGE BETRETEN</button></div>
+      <p class="muted" id="resumeNote" style="display:none; margin-top:14px;"></p>
+    </div>
+  </div>
+
+  <!-- Success screen -->
+  <div id="successScreen" class="screen hidden">
+    <div class="card">
+      <div class="eyebrow">NOTSTROM-FREIGABE</div>
+      <h1>PROTOKOLL ABGESCHLOSSEN</h1>
+      <p>Alle Seiten geborgen. Der Ausgang ist erreicht. Die Anlage gibt die
+         kalibrierten Koordinaten frei:</p>
+      <div class="coords" id="finalCoords">&mdash;</div>
+      <p class="muted">Notiere sie, bevor der n&auml;chste Blitz verblasst.<br>
+         (Platzhalterwerte f&uuml;r diesen Testbau.)</p>
+      <div><button class="btn" id="againBtn">NOCH EINMAL</button></div>
+    </div>
+  </div>
+
+  <!-- Three.js r128 -->
+  <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+  <script>
+  (function(){
+    "use strict";
+
+    /* =========================================================================
+       EASTER EGG - friendly console note for SDBH-R.
+       Contains NO hints, coordinates, or solution data. Purely a wink.
+       ========================================================================= */
+    (function consoleWink(){
+      var msg =
+        "KALIBRIERUNGSANLAGE · PERSONALABTEILUNG\n" +
+        "—————————————————————————————————————————\n" +
+        "Hallo, SDBH-R.\n\n" +
+        "Deine Personalakte wurde aktualisiert. Vermerk:\n" +
+        "»Liest den Quelltext UND bedient (völlig unnötigerweise)\n" +
+        " den Konsolen-Debugger.«\n\n" +
+        "Diesmal hilft dir der Debugger nicht. Die Anlage ist\n" +
+        "nicht kaputt — sie ist nur dunkel. Der Strom ist weg,\n" +
+        "nicht der Code. Kein Bug, nur ein Sturm.\n\n" +
+        "Schön, dass du wieder reinschaust. Pass auf dich auf\n" +
+        "da draußen im Dunkeln.\n" +
+        "                                        — Die Verwaltung";
+      try{
+        console.log("%c" + msg,
+          "color:#39ff14;background:#0b0d10;font-family:monospace;font-size:13px;" +
+          "line-height:1.5;padding:12px 16px;border:1px solid #1f7a3a;border-radius:6px;");
+      }catch(e){ /* no console, no problem */ }
+    })();
+
+    /* =========================================================================
+       TUNABLE CONSTANTS  -  the main difficulty / feel knobs.
+       ========================================================================= */
+    var BPM                  = 100;   // beats per minute of the storm clock
+    var FLASH_INTERVAL_BEATS = 8;     // a lightning flash every N beats (8 @100BPM = 4.8s)
+    var FLASH_DURATION       = 0.40;  // seconds the flash stays bright
+    var FLASH_FADE           = 0.30;  // seconds the flash fades to black
+    var MOVE_DURATION        = 0.25;  // seconds per step / 90-degree turn
+
+    var CELL                 = 3;     // world units per grid cell
+    var EYE                  = 1.6;   // camera eye height
+    var VIEW_RADIUS          = 5;     // how far a flash reveals down a clear corridor (minimap/sight)
+
+    // Darkness + flash lighting (tune to taste)
+    var FOG_DARK   = 0.20;            // fog density between flashes (high = very dark, ~1-2 cells)
+    var FOG_FLASH  = 0.05;            // fog density at flash peak (low = see far)
+    var AMBIENT    = 0.06;            // baseline ambient light
+    var PLAYER_LIGHT = 1.15, PLAYER_LIGHT_DIST = CELL*2.6, PLAYER_LIGHT_DECAY = 1.7;
+    var FLASH_HEMI = 1.5, FLASH_DIR = 0.7;
+
+    var MMAP_CELLS = 9;               // minimap shows an NxN window centered on the player
+
+    var BG = 0x17191d;
+    var BEAT = 60 / BPM;
+    var reducedMotion = window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* =========================================================================
+       LEVEL DATA  -  stored encoded so reading the page source / using the
+       console reveals nothing about the dark maze, pages, or coordinates.
+       (Decoded only here, inside this closure; never attached to window.)
+
+       AUTHORING a new level (data-driven, no engine edits):
+         1. Write a LEVEL object with this schema:
+              { name, spawnFacing(0=N,1=E,2=S,3=W),
+                grid:[ "..." rows of  # wall  . floor  S spawn  E exit  C checkpoint ],
+                doors:   [ {x,y,id} ],
+                buttons: [ {x,y,id,opens:[doorId,...]} ]   // x,y is the WALL the button sits on
+                pages:   [ {x,y,id,slot,frag} ]            // frag = digit fragment shown on the page
+                coordTemplate: "...{}..."  // each {} filled left-to-right by page frags (slot order)
+              }
+         2. Run  node tools/encode-level.js  (paste your LEVEL there) to get a new blob.
+         3. Replace LEVEL_BLOB below. Done - no engine code changes required.
+       ========================================================================= */
+    var LEVEL_KEY  = "K4l1br1erungsanlage-Dunkelprotokoll";
+    var LEVEL_BLOB =
+      "MBYCUA8XE19QNCArMiYrTFBHh63QVSUqKSUyICYxPT4hKz8Odil/J1AdRwEFDxAdJw8PCAkCD35EQk" +
+      "kCHhkWTU40SUxPT2gXTxJBURJGUFlMRCBPQEJPSUsDalZMR0dPXlFBV0FIQU9CaBZAE0FcEktRW01J" +
+      "UE9NTk1FRgNqWy1FS0JeXExWQ0lMQk9lF0ISTFEfRlBZTERdQkBPT0RLDmdWTEdHT15cQVpBRUFCKW" +
+      "gWQBNBURJGUVZNRFBCTU48S0dJKxocGEdWKwlNDE1RV0BOMhZWBk5QWAFQT0wDQkMTMU1FB1gwAQEF" +
+      "Fk5KKRRWF0lVWEBpTU4LUV4TDBZXVEURUExAQwgVSCoGTFE+ThRDTSkSNkNOHCpTCUJASGoeUA1MXU" +
+      "pNTBVDXVQBZhwKSV9OAEJNWE0YAwMYaQ5cHUAUQwQVV1RFQllMEU0cR1VmT19HRxVSSFhYTQILTlZp" +
+      "RF0TTlBCCR0BTF1CTUwKEwYCD35XW1hHEVwJTQxNUVhATjIWVgJOUFgBUE9MF0FDQk4SCwpZZk9cR0" +
+      "cKAhMIVlVJWF5ONhgXExpQC1ZeVxdFSVRCTggDRxdmBV1JSU4DHgAATVFcQE4tRg1WQEgTUUJXE0sI" +
+      "QxZOW15JDz1XVF5JThkWTU5NG1tOQGlHAF4WUAtRXlcIFRIGTFZDUVwPOShCSQYDHwALIAoGHwANP1" +
+      "FOC0A8EVFLt95HCBwVEU8cGFY5DhNLRSlQQl5GrdtPFxEwSUJKHwlMHg9XEw==";
+
+    function decodeLevel(b64, key){
+      var enc = new TextEncoder(), dec = new TextDecoder();
+      var kb = enc.encode(key);
+      var bin = atob(b64);
+      var bytes = new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i) ^ kb[i % kb.length];
+      return JSON.parse(dec.decode(bytes));
+    }
+
+    var LEVEL;
+    try { LEVEL = decodeLevel(LEVEL_BLOB, LEVEL_KEY); }
+    catch(e){ document.body.innerHTML =
+      "<div style='color:#ff4a4a;font-family:monospace;padding:40px'>Ebenendaten konnten nicht geladen werden.</div>";
+      return; }
+
+    /* =========================================================================
+       DERIVED LEVEL STATE
+       ========================================================================= */
+    var grid = LEVEL.grid;
+    var W = grid[0].length, H = grid.length;
+    var spawn=null, exitCell=null, checkpoint=null;
+    for(var y=0;y<H;y++) for(var x=0;x<W;x++){
+      var ch = grid[y][x];
+      if(ch==='S') spawn={x:x,y:y};
+      else if(ch==='E') exitCell={x:x,y:y};
+      else if(ch==='C') checkpoint={x:x,y:y};
+    }
+    var doors   = LEVEL.doors.map(function(d){ return {x:d.x,y:d.y,id:d.id,open:false,mesh:null,closedY:0,openY:0}; });
+    var buttons = LEVEL.buttons.map(function(b){ return {x:b.x,y:b.y,id:b.id,opens:b.opens,pressed:false,mesh:null,front:null,faceVec:null}; });
+    var pages   = LEVEL.pages.map(function(p){ return {x:p.x,y:p.y,id:p.id,slot:p.slot,frag:p.frag,collected:false,mesh:null}; });
+    var totalPages = pages.length;
+
+    function isWall(x,y){ return x<0||y<0||x>=W||y>=H || grid[y][x]==='#'; }
+    function doorAt(x,y){ for(var i=0;i<doors.length;i++) if(doors[i].x===x&&doors[i].y===y) return doors[i]; return null; }
+    function isClosedDoor(x,y){ var d=doorAt(x,y); return d && !d.open; }
+    function isBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
+    function sightBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
+    function pageAt(x,y){ for(var i=0;i<pages.length;i++) if(!pages[i].collected&&pages[i].x===x&&pages[i].y===y) return pages[i]; return null; }
+    function buttonAt(x,y){ for(var i=0;i<buttons.length;i++) if(buttons[i].x===x&&buttons[i].y===y) return buttons[i]; return null; }
+
+    // Resolve which floor cell each button is pressed from (the side its panel faces).
+    var DIRS = [{dx:0,dy:-1},{dx:1,dy:0},{dx:0,dy:1},{dx:-1,dy:0}]; // N,E,S,W
+    buttons.forEach(function(b){
+      for(var i=0;i<DIRS.length;i++){
+        var nx=b.x+DIRS[i].dx, ny=b.y+DIRS[i].dy;
+        if(nx<0||ny<0||nx>=W||ny>=H) continue;
+        if(grid[ny][nx]!=='#' && !doorAt(nx,ny)){ b.front={x:nx,y:ny}; b.faceVec=DIRS[i]; break; }
+      }
+    });
+
+    /* =========================================================================
+       THREE.JS SCENE
+       ========================================================================= */
+    if(typeof THREE === "undefined"){
+      document.getElementById("startScreen").innerHTML =
+        "<div class='card'><h1>Renderer nicht geladen</h1><p class='muted'>Three.js (r128) konnte nicht geladen werden. Pr&uuml;fe die Internetverbindung.</p></div>";
+      return;
+    }
+
+    var app = document.getElementById("app");
+    var renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    app.appendChild(renderer.domElement);
+
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(BG);
+    scene.fog = new THREE.FogExp2(BG, FOG_DARK);
+
+    var camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.05, 200);
+
+    // Lights
+    var ambient = new THREE.AmbientLight(0x223044, AMBIENT);
+    scene.add(ambient);
+    var hemi = new THREE.HemisphereLight(0xa8c0e0, 0x0a0c10, 0); scene.add(hemi);
+    var dir = new THREE.DirectionalLight(0xcfe0f5, 0); dir.position.set(0.4,1,0.25); scene.add(dir);
+    var playerLight = new THREE.PointLight(0x86a0cc, PLAYER_LIGHT, PLAYER_LIGHT_DIST, PLAYER_LIGHT_DECAY);
+    scene.add(playerLight);
+
+    function cw(x){ return x*CELL; } // cell -> world coordinate
+
+    // Materials
+    var matFloor   = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.96, metalness:0.05 });
+    var matCeil    = new THREE.MeshStandardMaterial({ color:0x0e1014, roughness:1.0,  metalness:0.0  });
+    var matWall    = new THREE.MeshStandardMaterial({ color:0x24272d, roughness:0.85, metalness:0.12 });
+    var matDoor    = new THREE.MeshStandardMaterial({ color:0x2b2f36, roughness:0.5,  metalness:0.55,
+                       emissive:0x401414, emissiveIntensity:0.6 });
+
+    // Floor + ceiling planes
+    var planeGeo = new THREE.PlaneGeometry(W*CELL, H*CELL);
+    var floor = new THREE.Mesh(planeGeo, matFloor);
+    floor.rotation.x = -Math.PI/2;
+    floor.position.set(cw((W-1)/2), 0, cw((H-1)/2));
+    scene.add(floor);
+    var ceil = new THREE.Mesh(planeGeo, matCeil);
+    ceil.rotation.x = Math.PI/2;
+    ceil.position.set(cw((W-1)/2), CELL, cw((H-1)/2));
+    scene.add(ceil);
+
+    // Walls
+    var wallGeo = new THREE.BoxGeometry(CELL, CELL, CELL);
+    for(var wy=0;wy<H;wy++) for(var wx=0;wx<W;wx++){
+      if(grid[wy][wx]==='#'){
+        var m = new THREE.Mesh(wallGeo, matWall);
+        m.position.set(cw(wx), CELL/2, cw(wy));
+        scene.add(m);
+      }
+    }
+
+    // Doors (full-cell blast doors that sink into the floor when opened)
+    var doorGeo = new THREE.BoxGeometry(CELL*0.94, CELL*0.98, CELL*0.94);
+    doors.forEach(function(d){
+      var m = new THREE.Mesh(doorGeo, matDoor.clone());
+      d.closedY = CELL*0.49; d.openY = d.closedY - CELL*1.04;
+      m.position.set(cw(d.x), d.closedY, cw(d.y));
+      scene.add(m); d.mesh = m;
+    });
+
+    // Buttons (emissive panel on a wall face)
+    var btnGeo = new THREE.BoxGeometry(0.55,0.55,0.16);
+    buttons.forEach(function(b){
+      if(!b.front) return;
+      var m = new THREE.Mesh(btnGeo, new THREE.MeshStandardMaterial({
+        color:0x1a1d22, roughness:0.4, metalness:0.6, emissive:0xff4a4a, emissiveIntensity:0.9 }));
+      var fv = b.faceVec;
+      m.position.set(cw(b.x) + fv.dx*(CELL/2-0.06), 1.35, cw(b.y) + fv.dy*(CELL/2-0.06));
+      if(fv.dx!==0) m.rotation.y = Math.PI/2;
+      scene.add(m); b.mesh = m;
+    });
+
+    // Pages (glowing sheet with a readable number)
+    function makePageTexture(num){
+      var c=document.createElement("canvas"); c.width=256; c.height=320;
+      var g=c.getContext("2d");
+      g.fillStyle="#0d0f12"; g.fillRect(0,0,256,320);
+      g.strokeStyle="#62ff9c"; g.lineWidth=6; g.strokeRect(12,12,232,296);
+      g.fillStyle="#9fb0a6"; g.font="bold 34px monospace"; g.textAlign="center";
+      g.fillText("SEITE", 128, 72);
+      g.fillStyle="#62ff9c"; g.font="bold 132px monospace";
+      g.fillText(String(num), 128, 205);
+      g.fillStyle="#56635c"; g.font="15px monospace";
+      g.fillText("KALIBRIERUNG", 128, 272);
+      var t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
+    }
+    var pageGeo = new THREE.PlaneGeometry(1.25,1.55);
+    pages.forEach(function(p){
+      var tex = makePageTexture(p.frag);
+      var m = new THREE.Mesh(pageGeo, new THREE.MeshStandardMaterial({
+        map:tex, emissive:0xffffff, emissiveMap:tex, emissiveIntensity:0.85,
+        roughness:0.6, metalness:0.0, side:THREE.DoubleSide, transparent:true }));
+      m.position.set(cw(p.x), 1.45, cw(p.y));
+      scene.add(m); p.mesh = m;
+    });
+
+    // Exit marker (green beam + ring on the floor)
+    var exitGroup = new THREE.Group();
+    var beam = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,CELL,12),
+      new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.1, transparent:true, opacity:0.85 }));
+    beam.position.y = CELL/2; exitGroup.add(beam);
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(CELL*0.36,0.06,8,24),
+      new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.0 }));
+    ring.rotation.x = Math.PI/2; ring.position.y = 0.05; exitGroup.add(ring);
+    exitGroup.position.set(cw(exitCell.x),0,cw(exitCell.y));
+    scene.add(exitGroup);
+
+    // Checkpoint marker (subtle blue ring)
+    if(checkpoint){
+      var cpRing = new THREE.Mesh(new THREE.TorusGeometry(CELL*0.3,0.05,8,24),
+        new THREE.MeshStandardMaterial({ color:0x0a2240, emissive:0x5fa8ff, emissiveIntensity:0.7 }));
+      cpRing.rotation.x = Math.PI/2; cpRing.position.set(cw(checkpoint.x),0.05,cw(checkpoint.y));
+      scene.add(cpRing);
+    }
+
+    /* =========================================================================
+       PLAYER + CAMERA STATE
+       ========================================================================= */
+    var player = { cx:spawn.x, cy:spawn.y, facing:(LEVEL.spawnFacing||0) };
+    function yawFor(f){ return -f * (Math.PI/2); }
+    var cam = { x:cw(player.cx), z:cw(player.cy), yaw:yawFor(player.facing) };
+    var anim = null;       // {t,dur,from,to,onArrive}
+    var inputBuffer = null;
+    var fx = [];           // transient visual effects: fn(dt)->done?
+
+    function easeInOut(t){ return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+
+    function commitMove(d){
+      if(anim){ inputBuffer=function(){ commitMove(d); }; return; }
+      var v=DIRS[player.facing];
+      var nx=player.cx+v.dx*d, ny=player.cy+v.dy*d;
+      if(isBlocked(nx,ny)){ bump(); return; }
+      player.cx=nx; player.cy=ny;
+      anim={ t:0,dur:MOVE_DURATION,
+        from:{x:cam.x,z:cam.z,yaw:cam.yaw}, to:{x:cw(nx),z:cw(ny),yaw:cam.yaw},
+        onArrive:function(){ onEnterCell(nx,ny); } };
+    }
+    function commitTurn(d){ // d:-1 left, +1 right
+      if(anim){ inputBuffer=function(){ commitTurn(d); }; return; }
+      player.facing=(player.facing+d+4)%4;
+      anim={ t:0,dur:MOVE_DURATION,
+        from:{x:cam.x,z:cam.z,yaw:cam.yaw}, to:{x:cam.x,z:cam.z,yaw:cam.yaw + (-d)*(Math.PI/2)},
+        onArrive:null };
+    }
+    function finishAnim(){
+      var cb=anim.onArrive; anim=null;
+      if(cb) cb();
+      if(inputBuffer){ var f=inputBuffer; inputBuffer=null; f(); }
+    }
+
+    function onEnterCell(x,y){
+      if(checkpoint && x===checkpoint.x && y===checkpoint.y){ saveGame(); toast("Fortschritt gesichert","good"); }
+      var p=pageAt(x,y);
+      if(p){ collectPage(p); }
+      if(x===exitCell.x && y===exitCell.y){ tryExit(); }
+    }
+
+    function collectPage(p){
+      p.collected=true;
+      var mesh=p.mesh, t=0;
+      fx.push(function(dt){ t+=dt; var k=Math.min(t/0.4,1);
+        mesh.scale.setScalar(1+0.6*k); mesh.material.opacity=0.85*(1-k);
+        mesh.position.y=1.45+0.6*k;
+        if(k>=1){ scene.remove(mesh); return true; } return false; });
+      updatePagesHUD();
+      toast("Seite geborgen · Fragment "+p.frag,"good");
+    }
+
+    function pressButton(b){
+      if(b.pressed){ toast("Schalter bereits aktiviert","warn"); return; }
+      b.pressed=true;
+      if(b.mesh){ b.mesh.material.emissive.setHex(0x62ff9c); }
+      b.opens.forEach(function(id){ var d=doorAt2(id); if(d) openDoor(d); });
+      toast("KLACK — irgendwo öffnet sich eine Tür","good");
+    }
+    function doorAt2(id){ for(var i=0;i<doors.length;i++) if(doors[i].id===id) return doors[i]; return null; }
+    function openDoor(d){
+      if(d.open) return; d.open=true;
+      if(d.mesh) d.mesh.material.emissive.setHex(0x143a20);
+    }
+
+    function tryExit(){
+      var have=0; pages.forEach(function(p){ if(p.collected) have++; });
+      if(have>=totalPages){ showSuccess(); }
+      else { toast("DIE ANLAGE VERWEIGERT DIE FREIGABE — noch "+(totalPages-have)+
+                   " Seite(n) im Dunkeln. Kehr zurück.","bad", 3200); pulseVignette(); }
+    }
+
+    function bump(){
+      pulseVignette();
+      if(!reducedMotion){
+        var v=DIRS[player.facing], t=0;
+        fx.push(function(dt){ t+=dt; var k=Math.sin(Math.min(t/0.12,1)*Math.PI)*0.08;
+          bumpOffset.x=v.dx*k*CELL*0.12; bumpOffset.z=v.dy*k*CELL*0.12;
+          if(t>=0.12){ bumpOffset.x=0; bumpOffset.z=0; return true; } return false; });
+      }
+    }
+    var bumpOffset={x:0,z:0};
+    var vignette=document.getElementById("vignette");
+    function pulseVignette(){ vignette.style.opacity="0.55"; setTimeout(function(){ vignette.style.opacity="0"; },140); }
+
+    /* =========================================================================
+       INTERACT
+       ========================================================================= */
+    function interact(){
+      if(anim){ inputBuffer=interact; return; }
+      var v=DIRS[player.facing];
+      var fx2=player.cx+v.dx, fy2=player.cy+v.dy; // cell directly in front
+      var b=buttonAt(fx2,fy2);
+      if(b && b.front && b.front.x===player.cx && b.front.y===player.cy){ pressButton(b); }
+      else { toast("Hier ist nichts zu bedienen","warn",1200); }
+    }
+
+    /* =========================================================================
+       CLOCK / BEATS / FLASH
+       ========================================================================= */
+    var elapsed=0, lastBeatIndex=-1, lastFlashStart=-999, flashSeenNow=null;
+    var seen = {};        // revealed cells "x,y" -> true (fog of war)
+
+    function markSeen(x,y){ if(x<0||y<0||x>=W||y>=H) return; var k=x+","+y; seen[k]=true; if(flashSeenNow) flashSeenNow[k]=true; }
+    function doFlashReveal(){
+      flashSeenNow={};
+      var px=player.cx, py=player.cy;
+      for(var dx=-1;dx<=1;dx++) for(var dy=-1;dy<=1;dy++) markSeen(px+dx,py+dy);
+      for(var i=0;i<DIRS.length;i++){
+        for(var s=1;s<=VIEW_RADIUS;s++){
+          var nx=px+DIRS[i].dx*s, ny=py+DIRS[i].dy*s;
+          if(nx<0||ny<0||nx>=W||ny>=H) break;
+          markSeen(nx,ny);
+          if(sightBlocked(nx,ny)) break;
+        }
+      }
+    }
+
+    function updateBeats(){
+      var beat=Math.floor(elapsed/BEAT);
+      if(beat>lastBeatIndex){
+        for(var b=lastBeatIndex+1;b<=beat;b++){
+          if(b>0 && b % FLASH_INTERVAL_BEATS === 0){ lastFlashStart=b*BEAT; doFlashReveal(); }
+        }
+        lastBeatIndex=beat;
+      }
+    }
+
+    function flashLevel(){
+      var dt=elapsed-lastFlashStart;
+      if(dt<0) return 0;
+      if(reducedMotion){
+        var peak=0.7, hold=FLASH_DURATION, fade=FLASH_FADE*1.7;
+        if(dt<0.12) return peak*(dt/0.12);
+        if(dt<hold) return peak;
+        if(dt<hold+fade) return peak*(1-(dt-hold)/fade);
+        return 0;
+      }
+      if(dt<0.04) return dt/0.04;                       // attack
+      if(dt<FLASH_DURATION) return Math.min(1,0.86+0.14*Math.sin(dt*55)); // bright + flicker
+      if(dt<FLASH_DURATION+FLASH_FADE) return 1-(dt-FLASH_DURATION)/FLASH_FADE;
+      return 0;
+    }
+
+    /* =========================================================================
+       MINIMAP (fog of war)
+       ========================================================================= */
+    var mm=document.getElementById("minimap"), mmx=mm.getContext("2d");
+    var MM_PX=6; mm.width=MMAP_CELLS*MM_PX; mm.height=MMAP_CELLS*MM_PX;
+    function drawMinimap(){
+      var fl=flashLevel(), r=(MMAP_CELLS-1)/2, cs=MM_PX;
+      mmx.fillStyle="#0b0d10"; mmx.fillRect(0,0,mm.width,mm.height);
+      for(var oy=-r;oy<=r;oy++) for(var ox=-r;ox<=r;ox++){
+        var cx=player.cx+ox, cy=player.cy+oy, k=cx+","+cy;
+        if(!seen[k]) continue;
+        var sx=(ox+r)*cs, sy=(oy+r)*cs;
+        var col, mark=null;
+        if(isWall(cx,cy)) col="#2b323c";
+        else col="#1a2028";
+        var d=doorAt(cx,cy); if(d) mark = d.open ? "#2f6b45" : "#ff4a4a";
+        var b=buttonAt(cx,cy); if(b) mark = b.pressed ? "#62ff9c" : "#ffb347";
+        if(cx===exitCell.x&&cy===exitCell.y) mark="#62ff9c";
+        if(checkpoint&&cx===checkpoint.x&&cy===checkpoint.y) mark="#5fa8ff";
+        var pg=pageAt(cx,cy); if(pg) mark="#62ff9c";
+        var bright = (flashSeenNow && flashSeenNow[k]) ? (0.55+0.45*fl) : 0.55;
+        mmx.globalAlpha=bright; mmx.fillStyle=col; mmx.fillRect(sx,sy,cs,cs);
+        if(mark){ mmx.globalAlpha=Math.min(1,bright+0.25); mmx.fillStyle=mark;
+          mmx.fillRect(sx+1,sy+1,cs-2,cs-2); }
+      }
+      // player arrow (center)
+      mmx.globalAlpha=1;
+      var px=(r+0.5)*cs, py=(r+0.5)*cs, a=player.facing*(Math.PI/2);
+      mmx.save(); mmx.translate(px,py); mmx.rotate(a);
+      mmx.fillStyle="#ffffff"; mmx.beginPath();
+      mmx.moveTo(0,-cs*0.5); mmx.lineTo(cs*0.38,cs*0.45); mmx.lineTo(-cs*0.38,cs*0.45); mmx.closePath(); mmx.fill();
+      mmx.restore();
+    }
+
+    /* =========================================================================
+       METRONOME (visual, drives anticipation of the flash)
+       ========================================================================= */
+    var mdots=document.querySelectorAll("#metroDots .md");
+    var metroEl=document.getElementById("metronome");
+    var metroFill=document.getElementById("metroFill");
+    var flashCountEl=document.getElementById("flashCount");
+    function updateMetronome(){
+      var beatF=elapsed/BEAT, curBeat=Math.floor(beatF), beatInBar=((curBeat%4)+4)%4;
+      for(var i=0;i<mdots.length;i++) mdots[i].classList.toggle("on", i===beatInBar);
+      var nextFlash=Math.ceil((beatF+0.0001)/FLASH_INTERVAL_BEATS)*FLASH_INTERVAL_BEATS;
+      var toFlash=nextFlash-beatF;
+      metroFill.style.width=(100*(1-toFlash/FLASH_INTERVAL_BEATS))+"%";
+      flashCountEl.textContent=Math.max(1,Math.ceil(toFlash));
+      metroEl.classList.toggle("imminent", toFlash<=2.05);
+      metroEl.classList.toggle("flash", flashLevel()>0.35);
+    }
+
+    /* =========================================================================
+       HUD helpers
+       ========================================================================= */
+    var pageCountEl=document.getElementById("pageCount"),
+        pageTotalEl=document.getElementById("pageTotal"),
+        notebookEl=document.getElementById("notebook"),
+        toastEl=document.getElementById("toast");
+    pageTotalEl.textContent=totalPages;
+    function updatePagesHUD(){
+      var have=0; pages.forEach(function(p){ if(p.collected) have++; });
+      pageCountEl.textContent=have;
+      var ordered=pages.slice().sort(function(a,b){ return a.slot-b.slot; });
+      notebookEl.innerHTML = ordered.map(function(p){
+        return p.collected ? "<b>"+p.frag+"</b>" : "<span>··</span>";
+      }).join(" ");
+    }
+    var toastTimer=null;
+    function toast(msg,type,dur){
+      var el=document.createElement("div"); el.className="toast "+(type||"");
+      el.textContent=msg; toastEl.appendChild(el);
+      setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, dur||2000);
+    }
+
+    /* =========================================================================
+       SAVE / LOAD  (checkpoints = quiet autosave; no death/reset)
+       ========================================================================= */
+    var SAVE_KEY="dunkelprotokoll_save_v1";
+    function saveGame(){
+      try{
+        var data={ cx:player.cx, cy:player.cy, facing:player.facing,
+          pages:pages.filter(function(p){return p.collected;}).map(function(p){return p.id;}),
+          doors:doors.filter(function(d){return d.open;}).map(function(d){return d.id;}),
+          buttons:buttons.filter(function(b){return b.pressed;}).map(function(b){return b.id;}),
+          seen:Object.keys(seen) };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      }catch(e){}
+    }
+    function loadSave(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return null; } }
+    function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+    function applySave(s){
+      player.cx=s.cx; player.cy=s.cy; player.facing=s.facing;
+      cam.x=cw(player.cx); cam.z=cw(player.cy); cam.yaw=yawFor(player.facing);
+      (s.buttons||[]).forEach(function(id){ var b=buttons.filter(function(b){return b.id===id;})[0];
+        if(b){ b.pressed=true; if(b.mesh) b.mesh.material.emissive.setHex(0x62ff9c); } });
+      (s.doors||[]).forEach(function(id){ var d=doorAt2(id); if(d){ d.open=true;
+        if(d.mesh){ d.mesh.position.y=d.openY; d.mesh.material.emissive.setHex(0x143a20); } } });
+      (s.pages||[]).forEach(function(id){ var p=pages.filter(function(p){return p.id===id;})[0];
+        if(p){ p.collected=true; if(p.mesh){ scene.remove(p.mesh); } } });
+      (s.seen||[]).forEach(function(k){ seen[k]=true; });
+    }
+
+    /* =========================================================================
+       SUCCESS
+       ========================================================================= */
+    var running=false;
+    function assembleCoords(){
+      var fr=pages.slice().filter(function(p){return p.collected;})
+        .sort(function(a,b){return a.slot-b.slot;}).map(function(p){return p.frag;}).join("");
+      var i=0; return LEVEL.coordTemplate.replace(/\{\}/g, function(){ return fr[i++]!==undefined?fr[i-1]:"X"; });
+    }
+    function showSuccess(){
+      running=false;
+      document.getElementById("finalCoords").textContent=assembleCoords();
+      document.getElementById("successScreen").classList.remove("hidden");
+      clearSave();
+    }
+
+    /* =========================================================================
+       INPUT
+       ========================================================================= */
+    function act(a){
+      if(!running) return;
+      if(a==="forward") commitMove(1);
+      else if(a==="back") commitMove(-1);
+      else if(a==="left") commitTurn(-1);
+      else if(a==="right") commitTurn(1);
+      else if(a==="interact") interact();
+    }
+    window.addEventListener("keydown", function(e){
+      if(!running) return;
+      var k=e.key.toLowerCase(), handled=true;
+      if(k==="w"||e.key==="ArrowUp") act("forward");
+      else if(k==="s"||e.key==="ArrowDown") act("back");
+      else if(k==="a"||e.key==="ArrowLeft") act("left");
+      else if(k==="d"||e.key==="ArrowRight") act("right");
+      else if(k===" "||k==="enter") act("interact");
+      else handled=false;
+      if(handled) e.preventDefault();
+    });
+    // D-pad (touch + click)
+    var dpad=document.getElementById("dpad");
+    dpad.querySelectorAll(".dbtn").forEach(function(btn){
+      var a=btn.getAttribute("data-act");
+      var fire=function(e){ e.preventDefault(); act(a); };
+      btn.addEventListener("touchstart", fire, {passive:false});
+      btn.addEventListener("mousedown", fire);
+    });
+    var isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints>0);
+    if(isTouch){ dpad.classList.add("show"); document.getElementById("hint").style.display="none"; }
+
+    /* =========================================================================
+       AUDIO (optional, NOT required for timing - clock is independent)
+       ========================================================================= */
+    var audio=null, soundOn=false, audioOk=false;
+    var soundBtn=document.getElementById("soundBtn");
+    function initAudio(){
+      if(audio) return;
+      audio=new Audio("audio/storm.mp3"); audio.loop=true; audio.volume=0.5;
+      audio.addEventListener("canplaythrough", function(){ audioOk=true; });
+      audio.addEventListener("error", function(){ audioOk=false; soundOn=false; refreshSoundBtn(); });
+    }
+    function refreshSoundBtn(){ soundBtn.innerHTML = soundOn ? "🔊" : "🔇";
+      soundBtn.classList.toggle("off", !soundOn); }
+    function toggleSound(){
+      soundOn=!soundOn; initAudio();
+      if(soundOn){ audio.play().catch(function(){ soundOn=false; refreshSoundBtn(); }); }
+      else if(audio){ audio.pause(); }
+      refreshSoundBtn();
+    }
+    soundBtn.addEventListener("click", toggleSound);
+
+    document.getElementById("restartBtn").addEventListener("click", function(){
+      clearSave(); location.reload();
+    });
+
+    /* =========================================================================
+       MAIN LOOP
+       ========================================================================= */
+    var last=performance.now();
+    function frame(now){
+      requestAnimationFrame(frame);
+      var dt=(now-last)/1000; last=now;
+      if(dt>0.05) dt=0.05;
+      if(running && !document.hidden){ elapsed+=dt; updateBeats(); }
+
+      // movement / turn animation
+      if(anim){
+        anim.t+=dt/anim.dur; var e=easeInOut(Math.min(anim.t,1));
+        cam.x=anim.from.x+(anim.to.x-anim.from.x)*e;
+        cam.z=anim.from.z+(anim.to.z-anim.from.z)*e;
+        cam.yaw=anim.from.yaw+(anim.to.yaw-anim.from.yaw)*e;
+        if(anim.t>=1){ cam.x=anim.to.x; cam.z=anim.to.z; cam.yaw=anim.to.yaw; finishAnim(); }
+      }
+      // transient fx
+      for(var i=fx.length-1;i>=0;i--){ if(fx[i](dt)) fx.splice(i,1); }
+
+      // doors sliding
+      doors.forEach(function(d){ if(d.mesh && d.open && d.mesh.position.y>d.openY){
+        d.mesh.position.y=Math.max(d.openY, d.mesh.position.y - dt*(CELL*1.7)); } });
+
+      // camera
+      camera.position.set(cam.x+bumpOffset.x, EYE, cam.z+bumpOffset.z);
+      camera.rotation.set(0, cam.yaw, 0);
+      playerLight.position.set(cam.x, EYE, cam.z);
+      dir.position.set(cam.x+4, 12, cam.z+3);
+
+      // lighting / fog via flash envelope
+      var fl=flashLevel();
+      scene.fog.density = FOG_DARK + (FOG_FLASH-FOG_DARK)*fl;
+      hemi.intensity = FLASH_HEMI*fl;
+      dir.intensity  = FLASH_DIR*fl;
+      playerLight.intensity = PLAYER_LIGHT + fl*1.6;
+      document.getElementById("flash").style.opacity = (fl*(reducedMotion?0.05:0.14)).toFixed(3);
+
+      // pages bob/rotate, exit pulse
+      var tnow=elapsed;
+      pages.forEach(function(p){ if(p.mesh && !p.collected){
+        p.mesh.rotation.y += dt*(reducedMotion?0.3:0.9);
+        p.mesh.position.y = 1.45 + Math.sin(tnow*1.6 + p.x)*0.06; } });
+      beam.material.emissiveIntensity = 0.9 + Math.sin(tnow*2.2)*0.3;
+
+      if(running){ drawMinimap(); updateMetronome(); }
+      renderer.render(scene,camera);
+    }
+    requestAnimationFrame(frame);
+
+    window.addEventListener("resize", function(){
+      camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* =========================================================================
+       BOOT / START
+       ========================================================================= */
+    var existing=loadSave();
+    if(existing){
+      var note=document.getElementById("resumeNote");
+      note.style.display="block";
+      note.innerHTML="Gespeicherter Fortschritt gefunden — du setzt am letzten Kontrollpunkt fort. "+
+        "(↻ oben rechts startet die Ebene neu.)";
+    }
+    updatePagesHUD();
+
+    function startGame(){
+      document.getElementById("startScreen").classList.add("hidden");
+      if(existing){ applySave(existing); }
+      if(document.getElementById("sndChk").checked && !soundOn){ toggleSound(); }
+      // initial orientation reveal so the first bar isn't a total void
+      doFlashReveal();
+      lastFlashStart=-999; // but no full flash light yet; reveal only
+      elapsed=0; lastBeatIndex=-1; last=performance.now();
+      running=true;
+      updatePagesHUD();
+    }
+    document.getElementById("startBtn").addEventListener("click", startGame);
+    document.getElementById("againBtn").addEventListener("click", function(){ clearSave(); location.reload(); });
+
+  })();
+  </script>
+</body>
+</html>
