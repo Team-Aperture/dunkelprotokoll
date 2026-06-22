@@ -58,7 +58,7 @@ var FLASH_INTERVAL_BEATS = 8;     // flash every N beats
 var FLASH_DURATION       = 0.40;  // bright seconds
 var FLASH_FADE           = 0.30;  // fade seconds
 var MOVE_DURATION        = 0.25;  // step / turn animation
-var VIEW_RADIUS          = 5;     // how far a flash reveals down a clear corridor
+var VIEW_RADIUS          = 2;     // flash reveal/map range (short; minimap is a 5x5 window)
 var FOG_DARK  = 0.20;             // darkness between flashes (higher = darker)
 var FOG_FLASH = 0.05;             // visibility at flash peak (lower = see farther)
 ```
@@ -69,21 +69,30 @@ fade, no flicker) and page rotation slows.
 ## Designing levels (data-driven)
 
 Level layout is **data**, not engine code. To keep the dark maze a real
-challenge, the level is shipped **encoded** inside `index.html` — reading the page
-source or the browser console reveals no readable grid, page numbers, or
-coordinates. Authoring stays simple:
+challenge, the level is shipped **encoded** inside `index.html` (XOR + base64,
+decoded only at runtime inside the closure) — reading the page source, browsing
+the repo, or poking the console reveals no readable grid, page numbers, or
+coordinates. There are two authoring paths; both **validate solvability**
+(reachability, door gating, slot/digit counts) and print a ready-to-paste blob.
 
-1. Edit the `LEVEL` object in [`tools/encode-level.js`](tools/encode-level.js)
-   (grid + doors/buttons/pages — schema documented in that file).
-2. Run it — it **validates solvability** (reachability, door gating, slot/digit
-   counts) and prints a new blob:
+**Procedural** — how the current floor is made:
 
-   ```bash
-   node tools/encode-level.js
-   ```
+```bash
+node tools/generate-maze.js     # 21x17, START_SEED=1 == the shipped floor
+```
 
-3. Paste the printed blob into `index.html` as `var LEVEL_BLOB = "...";`.
-   No engine changes required.
+Edit `W`/`H` for a bigger/smaller maze or `START_SEED` for a different layout; it
+auto-places spawn, a door-gated exit, the button, 5 spread-out pages, and a
+checkpoint. The maze is never committed as plaintext — only the algorithm + seed.
+
+**Hand-authored** — bespoke layouts:
+
+```bash
+node tools/encode-level.js      # edit the example LEVEL object first
+```
+
+Either way, paste the printed `var LEVEL_BLOB = "...";` into `index.html`. No
+engine changes required.
 
 Grid legend: `#` wall · `.` floor · `S` spawn · `E` exit · `C` checkpoint.
 

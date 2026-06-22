@@ -262,16 +262,16 @@
 
     var CELL                 = 3;     // world units per grid cell
     var EYE                  = 1.6;   // camera eye height
-    var VIEW_RADIUS          = 5;     // how far a flash reveals down a clear corridor (minimap/sight)
+    var VIEW_RADIUS          = 2;     // how far a flash reveals/maps down a clear corridor (short range)
 
     // Darkness + flash lighting (tune to taste)
     var FOG_DARK   = 0.20;            // fog density between flashes (high = very dark, ~1-2 cells)
     var FOG_FLASH  = 0.05;            // fog density at flash peak (low = see far)
     var AMBIENT    = 0.06;            // baseline ambient light
-    var PLAYER_LIGHT = 1.15, PLAYER_LIGHT_DIST = CELL*2.6, PLAYER_LIGHT_DECAY = 1.7;
-    var FLASH_HEMI = 1.5, FLASH_DIR = 0.7;
+    var PLAYER_LIGHT = 1.0, PLAYER_LIGHT_DIST = CELL*2.4, PLAYER_LIGHT_DECAY = 1.8;
+    var FLASH_HEMI = 1.0, FLASH_DIR = 0.45;
 
-    var MMAP_CELLS = 9;               // minimap shows an NxN window centered on the player
+    var MMAP_CELLS = 5;               // minimap shows a small NxN window centered on the player (short range)
 
     var BG = 0x17191d;
     var BEAT = 60 / BPM;
@@ -297,16 +297,22 @@
        ========================================================================= */
     var LEVEL_KEY  = "K4l1br1erungsanlage-Dunkelprotokoll";
     var LEVEL_BLOB =
-      "MBYCUA8XE19QNCArMiYrTFBHh63QVSUqKSUyICYxPT4hKz8Odil/J1AdRwEFDxAdJw8PCAkCD35EQk" +
-      "kCHhkWTU40SUxPT2gXTxJBURJGUFlMRCBPQEJPSUsDalZMR0dPXlFBV0FIQU9CaBZAE0FcEktRW01J" +
-      "UE9NTk1FRgNqWy1FS0JeXExWQ0lMQk9lF0ISTFEfRlBZTERdQkBPT0RLDmdWTEdHT15cQVpBRUFCKW" +
-      "gWQBNBURJGUVZNRFBCTU48S0dJKxocGEdWKwlNDE1RV0BOMhZWBk5QWAFQT0wDQkMTMU1FB1gwAQEF" +
-      "Fk5KKRRWF0lVWEBpTU4LUV4TDBZXVEURUExAQwgVSCoGTFE+ThRDTSkSNkNOHCpTCUJASGoeUA1MXU" +
-      "pNTBVDXVQBZhwKSV9OAEJNWE0YAwMYaQ5cHUAUQwQVV1RFQllMEU0cR1VmT19HRxVSSFhYTQILTlZp" +
-      "RF0TTlBCCR0BTF1CTUwKEwYCD35XW1hHEVwJTQxNUVhATjIWVgJOUFgBUE9MF0FDQk4SCwpZZk9cR0" +
-      "cKAhMIVlVJWF5ONhgXExpQC1ZeVxdFSVRCTggDRxdmBV1JSU4DHgAATVFcQE4tRg1WQEgTUUJXE0sI" +
-      "QxZOW15JDz1XVF5JThkWTU5NG1tOQGlHAF4WUAtRXlcIFRIGTFZDUVwPOShCSQYDHwALIAoGHwANP1" +
-      "FOC0A8EVFLt95HCBwVEU8cGFY5DhNLRSlQQl5GrdtPFxEwSUJKHwlMHg9XEw==";
+      "MBYCUA8XE19QNCArMiYrTFBHh63QVSUqKSUyICYxPT4hKz8Odil/J1AdRwEFDxAdJw8PCAkCD3" +
+      "5HQkkCHhkWTU40SUxPT2gXTxJBURJGUVZNRFBCTU9CREcBZlY9SEtCXlxBWkFIQUJCZRpCckxc" +
+      "EkdeV01JUEJNT0JJRg5nW01IRk9TUUxaTElDTk9lGkIfTFEfS1xbQERdT0BCT0RLDmZZTEhGT1" +
+      "NRQVdBSExPT2gaTxJBXBJLUVdCRVBPTUJPSUYDZ1tARUZCU1xMWkFFTE5AaRdCEkxREkZRVkBE" +
+      "XUJAT09ERg5qVkxHR09eUUFXQUVBQkJoGkIfQVwfS1FbTUVfQ01CQklGA2dbTUhGT1NRTFpMSE" +
+      "xCT2kYThJMXB9GXFZARDZPQEJPSUsOaltASEdAUlFBV0xITE9CaBdPEkFREktRW01EUENCTkJJ" +
+      "SwNqW0BFRkJeXEFaQUVMQkJlF04dQFESRlFWTURQQkBPQkRGDmdWTUhLT1JeTVdBRUFCQmUaQh" +
+      "9BXB9LXFtASVBPTU5NRUYDZ1ZNSEZPU1FMWkxITEJPaBdCEkBeE0ZcW0BJXU9AQk9JSwNqVkBF" +
+      "S0JeUU1YTUhMT09oF08SQVESRlFWTURQQk1PQkU4AWYRAQQXH1JINA9NE01WXXsYTkhASAhJUB" +
+      "wKRUlDCl1DGjgBZhcbHxEDHgFNTjQQTRROcQVUHUALE19FWUwOF0NUTgNWRwFmGh4OCx9SSDRW" +
+      "C1pNMREWGE5BAxVUFlBPNRxRGUxWUFJJDz1XVF5JThkWTU5NG19OQGlHAF4WUAtVXlcIFRIGTF" +
+      "ZDVl0POVkVSR1OSkNDVhZJVV1AaV0IE1hQQVRQWUwUHw4aTltWSQ8iBw8MR1ZSR1xWEkcUThRp" +
+      "Dl0CTlBIR0hEW0tRCApOW0UVH2ZZTBgJAwRQVUZDSQkeDSwWVhNVQBMYXg5MH1FbW0BDHkcXfV" +
+      "lMAgFOSlAfR01HTR8AJEBOC1FeEwMAFAlFSUNaXEMaSVZmDUxRXEBSC01OXkdNBQhpDk5BVlAd" +
+      "RwEZARNRW1pAQwEXTCNXVElTVVIPMlhNCAADHi9gCVwSHlARF1dURT1BWlWj10VWOQ4TRR4RCw" +
+      "8UCU9LKkxcegaugUIJTB4PWxUaCBwVEUMa";
 
     function decodeLevel(b64, key){
       var enc = new TextEncoder(), dec = new TextDecoder();
@@ -393,7 +399,7 @@
     // Materials
     var matFloor   = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.96, metalness:0.05 });
     var matCeil    = new THREE.MeshStandardMaterial({ color:0x0e1014, roughness:1.0,  metalness:0.0  });
-    var matWall    = new THREE.MeshStandardMaterial({ color:0x24272d, roughness:0.85, metalness:0.12 });
+    var matWall    = new THREE.MeshStandardMaterial({ color:0x141619, roughness:0.94, metalness:0.04 });
     var matDoor    = new THREE.MeshStandardMaterial({ color:0x2b2f36, roughness:0.5,  metalness:0.55,
                        emissive:0x401414, emissiveIntensity:0.6 });
 
@@ -631,7 +637,7 @@
        MINIMAP (fog of war)
        ========================================================================= */
     var mm=document.getElementById("minimap"), mmx=mm.getContext("2d");
-    var MM_PX=6; mm.width=MMAP_CELLS*MM_PX; mm.height=MMAP_CELLS*MM_PX;
+    var MM_PX=16; mm.width=MMAP_CELLS*MM_PX; mm.height=MMAP_CELLS*MM_PX;
     function drawMinimap(){
       var fl=flashLevel(), r=(MMAP_CELLS-1)/2, cs=MM_PX;
       mmx.fillStyle="#0b0d10"; mmx.fillRect(0,0,mm.width,mm.height);
@@ -840,8 +846,8 @@
       scene.fog.density = FOG_DARK + (FOG_FLASH-FOG_DARK)*fl;
       hemi.intensity = FLASH_HEMI*fl;
       dir.intensity  = FLASH_DIR*fl;
-      playerLight.intensity = PLAYER_LIGHT + fl*1.6;
-      document.getElementById("flash").style.opacity = (fl*(reducedMotion?0.05:0.14)).toFixed(3);
+      playerLight.intensity = PLAYER_LIGHT + fl*1.0;
+      document.getElementById("flash").style.opacity = (fl*(reducedMotion?0.05:0.10)).toFixed(3);
 
       // pages bob/rotate, exit pulse
       var tnow=elapsed;
