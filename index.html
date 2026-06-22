@@ -42,8 +42,9 @@
   #pages{ position:absolute; top:12px; left:12px; padding:8px 11px; font-size:13px; }
   #pages .lbl{ color:var(--dim); font-size:10px; letter-spacing:.18em; }
   #pages .cnt{ color:var(--green); font-size:20px; font-weight:bold; }
-  #notebook{ margin-top:6px; color:var(--dim); font-size:12px; letter-spacing:.12em; }
+  #notebook{ margin-top:6px; color:var(--dim); font-size:12px; letter-spacing:.10em; max-width:150px; line-height:1.5; }
   #notebook b{ color:var(--green); font-weight:normal; }
+  #floorLbl{ margin-top:7px; color:var(--amber); font-size:11px; letter-spacing:.16em; }
 
   /* metronome */
   #metronome{ position:absolute; top:12px; left:50%; transform:translateX(-50%);
@@ -105,10 +106,12 @@
     border-color:#2c5e40; }
   .dbtn.mid:active{ background:rgba(98,255,156,.28); }
 
-  /* flash + vignette overlays */
+  /* flash + vignette + floor-fade overlays */
   #flash{ position:fixed; inset:0; background:#dfe9ff; opacity:0; pointer-events:none; z-index:8; }
   #vignette{ position:fixed; inset:0; pointer-events:none; z-index:9; opacity:0;
     box-shadow:inset 0 0 120px 30px var(--red); transition:opacity .12s; }
+  #fade{ position:fixed; inset:0; background:#050607; opacity:0; pointer-events:none; z-index:15;
+    transition:opacity .35s ease; }
 
   /* full-screen overlays (start / success) */
   .screen{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
@@ -138,7 +141,7 @@
     #minimap{ width:108px; height:108px; }
     #hint{ display:none; }
   }
-  @media (prefers-reduced-motion: reduce){ .toast{ animation:none; } }
+  @media (prefers-reduced-motion: reduce){ .toast{ animation:none; } #fade{ transition:opacity .15s; } }
 </style>
 </head>
 <body>
@@ -149,6 +152,7 @@
       <div class="lbl">SEITEN</div>
       <div><span class="cnt" id="pageCount">0</span><span style="color:var(--dim)"> / <span id="pageTotal">0</span></span></div>
       <div id="notebook"></div>
+      <div id="floorLbl">EBENE 1 / 3</div>
     </div>
 
     <div id="metronome" class="panel" title="Visuelles Metronom - der Blitz schlaegt auf die 1 jedes zweiten Taktes ein">
@@ -164,7 +168,7 @@
 
     <div id="tools">
       <div class="tbtn off" id="soundBtn" title="Ton an/aus">&#128263;</div>
-      <div class="tbtn" id="restartBtn" title="Ebene neu starten">&#8635;</div>
+      <div class="tbtn" id="restartBtn" title="Spiel neu starten">&#8635;</div>
     </div>
 
     <div id="toast"></div>
@@ -181,6 +185,7 @@
 
   <div id="flash"></div>
   <div id="vignette"></div>
+  <div id="fade"></div>
 
   <!-- Start screen -->
   <div id="startScreen" class="screen">
@@ -190,16 +195,19 @@
       <p>Der Sturm hat das Umspannwerk getroffen. In der Anlage ist der Strom weg &mdash;
          du siehst nur, wenn ein Blitz durch die Oberlichter schl&auml;gt.</p>
       <p class="muted">Taste dich durch die Korridore. Dr&uuml;cke Schalter, um T&uuml;ren zu &ouml;ffnen.
-         Sammle <b style="color:var(--green)">alle Seiten</b> ein und erreiche den Ausgang &mdash;
-         erst dann gibt die Anlage die Koordinaten frei.</p>
+         Sammle <b style="color:var(--green)">alle Seiten</b> &uuml;ber <b style="color:var(--amber)">drei Ebenen</b>
+         und steige per Leiter hinab. Erst der Ausgang ganz unten &mdash; mit allen Seiten &mdash;
+         gibt die Koordinaten frei.</p>
       <div class="ctrlgrid">
         <span>Vorw&auml;rts / R&uuml;ckw&auml;rts</span><b>W&nbsp;S &nbsp;oder&nbsp; &uarr;&nbsp;&darr;</b>
         <span>Drehen links / rechts</span><b>A&nbsp;D &nbsp;oder&nbsp; &larr;&nbsp;&rarr;</b>
         <span>Schalter bedienen</span><b>Leertaste</b>
+        <span>Leiter</span><b>einfach drauftreten</b>
         <span>Mobil</span><b>Steuerkreuz unten rechts</b>
       </div>
       <p class="muted">Kein Ton n&ouml;tig: das <b style="color:var(--txt)">visuelle Metronom</b> (100&nbsp;BPM, 4/4)
-         k&uuml;ndigt jeden Blitz an &mdash; er trifft auf die <b style="color:var(--txt)">1</b> jedes zweiten Taktes.</p>
+         k&uuml;ndigt jeden Blitz an &mdash; er trifft auf die <b style="color:var(--txt)">1</b> jedes zweiten Taktes.
+         Kontrollpunkte sichern deinen Fortschritt.</p>
       <label class="snd"><input type="checkbox" id="sndChk" /> Sturmger&auml;usch laden (optional, <code>audio/storm.mp3</code>)</label>
       <div><button class="btn" id="startBtn">ANLAGE BETRETEN</button></div>
       <p class="muted" id="resumeNote" style="display:none; margin-top:14px;"></p>
@@ -211,8 +219,8 @@
     <div class="card">
       <div class="eyebrow">NOTSTROM-FREIGABE</div>
       <h1>PROTOKOLL ABGESCHLOSSEN</h1>
-      <p>Alle Seiten geborgen. Der Ausgang ist erreicht. Die Anlage gibt die
-         kalibrierten Koordinaten frei:</p>
+      <p>Alle Seiten geborgen. Der Ausgang im Untergeschoss ist erreicht. Die Anlage
+         gibt die kalibrierten Koordinaten frei:</p>
       <div class="coords" id="finalCoords">&mdash;</div>
       <p class="muted">Notiere sie, bevor der n&auml;chste Blitz verblasst.<br>
          (Platzhalterwerte f&uuml;r diesen Testbau.)</p>
@@ -283,36 +291,69 @@
        console reveals nothing about the dark maze, pages, or coordinates.
        (Decoded only here, inside this closure; never attached to window.)
 
-       AUTHORING a new level (data-driven, no engine edits):
-         1. Write a LEVEL object with this schema:
-              { name, spawnFacing(0=N,1=E,2=S,3=W),
-                grid:[ "..." rows of  # wall  . floor  S spawn  E exit  C checkpoint ],
-                doors:   [ {x,y,id} ],
-                buttons: [ {x,y,id,opens:[doorId,...]} ]   // x,y is the WALL the button sits on
-                pages:   [ {x,y,id,slot,frag} ]            // frag = digit fragment shown on the page
-                coordTemplate: "...{}..."  // each {} filled left-to-right by page frags (slot order)
-              }
-         2. Run  node tools/encode-level.js  (paste your LEVEL there) to get a new blob.
-         3. Replace LEVEL_BLOB below. Done - no engine code changes required.
+       Structure (multi-floor):
+         { coordTemplate: "...{}...",     // {} filled left-to-right by page frags (slot order)
+           floors: [ {                    // floor 0 = top, last = bottom
+             name, w, h, spawnFacing(0=N,1=E,2=S,3=W),
+             grid:[ "..." rows: # wall . floor S spawn E exit C checkpoint ],
+             doors:[{x,y,id}], buttons:[{x,y,id,opens:[doorId]}],
+             pages:[{x,y,id,slot,frag}],  checkpoint:{x,y},
+             up:{x,y}|null,               // arrival cell when descending into this floor
+             down:{x,y}|null,             // ladder down to next floor (gated)
+             exit:{x,y}|null              // final exit (last floor only)
+           }, ... ] }
+
+       Author floors with  node tools/generate-maze.js  (procedural) or
+       tools/encode-level.js (hand-authored), then replace LEVEL_BLOB below.
        ========================================================================= */
     var LEVEL_KEY  = "K4l1br1erungsanlage-Dunkelprotokoll";
     var LEVEL_BLOB =
-      "MBYCUA8XE19QNCArMiYrTFBHh63QVSUqKSUyICYxPT4hKz8Odil/J1AdRwEFDxAdJw8PCAkCD3" +
-      "5HQkkCHhkWTU40SUxPT2gXTxJBURJGUVZNRFBCTU9CREcBZlY9SEtCXlxBWkFIQUJCZRpCckxc" +
-      "EkdeV01JUEJNT0JJRg5nW01IRk9TUUxaTElDTk9lGkIfTFEfS1xbQERdT0BCT0RLDmZZTEhGT1" +
-      "NRQVdBSExPT2gaTxJBXBJLUVdCRVBPTUJPSUYDZ1tARUZCU1xMWkFFTE5AaRdCEkxREkZRVkBE" +
-      "XUJAT09ERg5qVkxHR09eUUFXQUVBQkJoGkIfQVwfS1FbTUVfQ01CQklGA2dbTUhGT1NRTFpMSE" +
-      "xCT2kYThJMXB9GXFZARDZPQEJPSUsOaltASEdAUlFBV0xITE9CaBdPEkFREktRW01EUENCTkJJ" +
-      "SwNqW0BFRkJeXEFaQUVMQkJlF04dQFESRlFWTURQQkBPQkRGDmdWTUhLT1JeTVdBRUFCQmUaQh" +
-      "9BXB9LXFtASVBPTU5NRUYDZ1ZNSEZPU1FMWkxITEJPaBdCEkBeE0ZcW0BJXU9AQk9JSwNqVkBF" +
-      "S0JeUU1YTUhMT09oF08SQVESRlFWTURQQk1PQkU4AWYRAQQXH1JINA9NE01WXXsYTkhASAhJUB" +
-      "wKRUlDCl1DGjgBZhcbHxEDHgFNTjQQTRROcQVUHUALE19FWUwOF0NUTgNWRwFmGh4OCx9SSDRW" +
-      "C1pNMREWGE5BAxVUFlBPNRxRGUxWUFJJDz1XVF5JThkWTU5NG19OQGlHAF4WUAtVXlcIFRIGTF" +
-      "ZDVl0POVkVSR1OSkNDVhZJVV1AaV0IE1hQQVRQWUwUHw4aTltWSQ8iBw8MR1ZSR1xWEkcUThRp" +
-      "Dl0CTlBIR0hEW0tRCApOW0UVH2ZZTBgJAwRQVUZDSQkeDSwWVhNVQBMYXg5MH1FbW0BDHkcXfV" +
-      "lMAgFOSlAfR01HTR8AJEBOC1FeEwMAFAlFSUNaXEMaSVZmDUxRXEBSC01OXkdNBQhpDk5BVlAd" +
-      "RwEZARNRW1pAQwEXTCNXVElTVVIPMlhNCAADHi9gCVwSHlARF1dURT1BWlWj10VWOQ4TRR4RCw" +
-      "8UCU9LKkxcegaugUIJTB4PWxUaCBwVEUMa";
+      "MBYKXQ0dQxZQTzUcUQ8PAQRFXw8BNyslIExBUENWGElVXVVnFgQTWEMESVAGHgYEDygNAg4LSm" +
+      "ZPXEdHCwIbC1ZVME1PT2gXTxJBURJGUVZNRFBCTU9CRUkPZyZNRUtCXlxMWkFFQS9CZRpCEkBe" +
+      "E0ZcVkBEUEJAT09ERg5nVk1IS09SXk1XQUhBT0JoGk8fQVwfS1FbQElQQ0JOQklGA2dbTUVGQl" +
+      "NcTFpMRUxPT2kYThJMUR9GXFtARF1PQE9PREsDalZMR0dPXlFBV0xITE9PaBdPH0FREktRV0JF" +
+      "UE9NQk9JSwNqW0BFRkJTXEFaTElDTk9lF0ISQVEfRlFWTURdQkBPT0RHAWZWQEhLT15RQVpBRU" +
+      "FCQmgaTx9BUB1HUVtNSVBPTU9CREYDZ1ZNRUZCU1BDVkxFTEJCZRdCH0xRH0tcVkBEXUJMQENE" +
+      "Sw5nVk1IS09eUUxXTEhBT0JoFkATQVwfS1xbQElQT0BCT0lLA2dbTUlJTlNRTFdMSExPT2gXTx" +
+      "JBURJGUVZMOl9DCgMOFRYPfi4VSR1OSkdDVhZJVVhAaV0IE1hQVVRQCDNLUQMbGBUIC15mTzUQ" +
+      "RxRSSF5GQ0kWTlZ8GE5YBlALRxBETEtRDh4JDxRHFx9XClpHMQ0vQ1YfCggJH2kON0pAChNfR1" +
+      "lMHlFbV0BDDgEPflceW0dAUgEDGxtJVVxAaVIeUAVQC0dDVxNLCEMWTltWUgFmDExRVF9cUAYQ" +
+      "TVFNHF1pGE5CDh1FR0hEQkUVEw8LQ11HFWYIQhBHFFJIXlhNEk1WXWcWBVVASBMVQFdCRQANAR" +
+      "hDXVcBZhMcCgJOSlBaVhI2Q04PI1EPWhIdWAsGV1QcURlMVlBUSQ89V1RaGEBSBx9WVQUaAABn" +
+      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNAThREDUUKPlQLUE9fV0FNTDMSAgBJZk" +
+      "9fWhhAC1ABFQIOTVZODnYpfydSA0deVxlFSVNfQEMPRxd1QkJJFhwRBQEyDggGAgtpDl4dQBVD" +
+      "DBZXVDxRQk1PQkRGDmdWTUhGT1NRTFdMSExPTmcWTx9BXB9LXFtNSVBPQEJPSUsDaltNSUlOU1" +
+      "xMWkxITEJPZRdCEkFREkZcVkBEUU1MT09JSw5qVkBIS0JeUUFaQUhBT0JoFkATQVESRlFbTUlQ" +
+      "T01PQklGA2dbTUVGTlxQTFpMRUFCQmUXQhJMXB9GXFZARF1CTEBDREsOalZNSEZPU1FBV0xIQU" +
+      "9CaBdPE05QEktRW0BJXU9AQk9JRgNqW01FS0JTUENWTEVMT09oF08SQVESRlxWTURdQkBPQ0tH" +
+      "DmpbQEVLQl5RQVpBSEFPQmUaTx9BUB1HUVtNRFBCTUJCSUYDZ1tNSEZPU1xMVkNJTEJPZRpCEk" +
+      "xcH0ZcVkBEXU8tQk9ERwFmVkBIS09eUUxXTEhBT0JoGk8SQVwSR15XTUldT01CQklLA2dbTUVL" +
+      "QlNcQVpMSUNOT2UXTxJMUR9GXFZNRFBCTU9PREYOZllMSEtCXlFBWkFIQUJCZRpCH0xcH0tRV0" +
+      "JFUEJNT0JERg5nVk1IRk9TUUxXTEhMTjFnFgheDQBCR0guFUULQ1RdUEtHVGZPX1lJThkWTU5N" +
+      "D15OERYYTlMXBkUKHAZMXSgaTBRDXVwBZgxMUVVAUhsLVlVJDV1OZxYDQQccQkdILkwDQkMzET" +
+      "xLR10lEgsYR1YrCU0MTVFeQE4yFlYETlBYAVBPTBdAQ0JOEgsKWWZPXUdHCgITCFZVSVxOEWdP" +
+      "TklASABcXlcXRUlQW0BDDgEPflceX0dAUgEDGxtJVVhAaVIeUAVQC0dFVxNLCEMWTltUSQ89V1" +
+      "RaUEBSGwtWVUkfWU5nFh9dDQYTX0dZTAEBAAlOW0VXDzkoQkkGBBURBAQAAgEYTnFPTklASABS" +
+      "XlcXRUlQXxFNRRBdZk8VSR1OSkNDVhZJVV0RZxYIXhUcE18JVxZFSVBfQEMeRxd1RhNHRwkIGx" +
+      "tWVQUaAABnFjNBAwZZKRcbTF1CUF5AQzgWSCERTFFXXg1eFFYBCgIJTnEWKXMnPHRFQVdCRQRD" +
+      "VF5SS0dFZk9fUklOAwIOAwEtDg8FJVNOC1BeEwIAHApFSTpMT0JERg5nVk1IRk9TUUxXTEhMT0" +
+      "9oF08TTlASS1FbQCJQT0BCT0lLA2dbQEVLQlNcTFZDSUxCT2UXTxJMUR9GUVZNRF1CQE9PREsO" +
+      "ZllMSEtPXlFBWkFIQUJCZRpCH0FcEktcW01FX0NNQkJJRgNnVk1IRk9TUUxXTEVMT09oF04dQF" +
+      "EfRlxbQEldQkBCT0lLA2pbQEhLQl5RTVhNSEFPT2gXTx9BXBJGUVZNRFBPTUJCSUYPaFdNRUtC" +
+      "XlxMWkxFQUJCZRpCEkxRH0ZcVkxLUUJNT0JESw5nVk1IRk9TUUFXTEhBT0JoFkATQVwfS1FbQE" +
+      "ldT01CT0lGA2pbTUVGQlNQQ1ZMRUxPT2gXTxJMUR9GXFZNRF1CQE9PREcBZlZARUtCXlFBWkFI" +
+      "QU9CZRpPH0xcEktRV0JFUE9NT0JJRgNnVk1FRk9TXExXTEhMQk9pGE4STFEfRlxbQERdT0BCT0" +
+      "QmA2pbQEVLT1JeTVdBSEFPT2gXTx9BURJLUVZNRFBCTUJCRUkPZ1tARUtCU1xBWkFFTEJCZRpC" +
+      "H0xRH0ZQWUxEUEJNT09ERg5nVk1IRk9TUUxXQUhBT05nFk8fTFwfS1xbQEldT0BCT0lLA2pbTU" +
+      "VGTlxQTFdMSExPT2gXTxJBURJGUVZNRFBCTU9DOkkPIBoBGRZOSikUVhdJVVhAaU1OC1NeEwwW" +
+      "V1RFF1BMETxLR08xARoECx9SSDQPTRNNVl1/GE5IQEgASVAcCkVJQwxdQ0tHQjQQABhHVitQC0" +
+      "VNNhIxQGlEDVYHARNfKQ5MH1FbWUBDHkcXc1lMAgFOSlAfQk1HTR8AJEBOC1ReEwMAFAlFSUNa" +
+      "ThxLHg88V1RZVEBSC01OXlxDTgUvFlYTEkUTSVAGAggHQ1RbTUUDXyUSTFFHXFIPQw9NE01WXn" +
+      "oYTkhASABJUBwKRUlDHlRDS0deKBoaSV9UXFAJBg4MTVZOfRYRHRlQSUdIREJFCkNUXVZLR0Qg" +
+      "V1RJFVVSXk0HAwQbTlZyGE5XEBNWR0hXV0UOPEJOAg8ATi8FAQILGFJIFFYXSVVdWWcWFRNYQw" +
+      "IYXlcbF1FbFU4ZRV8caFcXSV9dDV5NEAAcAU5WJUEAXU5QVB0bAUxdCEMWTltSSQ89V1RaGEBS" +
+      "LR8VGwMjCQJpDl0EVF4TOgEQCwNRW11fHDpJDycaARkBOBUfHxgOHwpOVml6TAVbsIFFCQgVGl" +
+      "0aExccHBgNZDBOW1RessJPDxIQEkIXNk8RSh9QTA==";
 
     function decodeLevel(b64, key){
       var enc = new TextEncoder(), dec = new TextDecoder();
@@ -323,46 +364,29 @@
       return JSON.parse(dec.decode(bytes));
     }
 
-    var LEVEL;
-    try { LEVEL = decodeLevel(LEVEL_BLOB, LEVEL_KEY); }
+    var DATA;
+    try { DATA = decodeLevel(LEVEL_BLOB, LEVEL_KEY); }
     catch(e){ document.body.innerHTML =
       "<div style='color:#ff4a4a;font-family:monospace;padding:40px'>Ebenendaten konnten nicht geladen werden.</div>";
       return; }
 
-    /* =========================================================================
-       DERIVED LEVEL STATE
-       ========================================================================= */
-    var grid = LEVEL.grid;
-    var W = grid[0].length, H = grid.length;
-    var spawn=null, exitCell=null, checkpoint=null;
-    for(var y=0;y<H;y++) for(var x=0;x<W;x++){
-      var ch = grid[y][x];
-      if(ch==='S') spawn={x:x,y:y};
-      else if(ch==='E') exitCell={x:x,y:y};
-      else if(ch==='C') checkpoint={x:x,y:y};
-    }
-    var doors   = LEVEL.doors.map(function(d){ return {x:d.x,y:d.y,id:d.id,open:false,mesh:null,closedY:0,openY:0}; });
-    var buttons = LEVEL.buttons.map(function(b){ return {x:b.x,y:b.y,id:b.id,opens:b.opens,pressed:false,mesh:null,front:null,faceVec:null}; });
-    var pages   = LEVEL.pages.map(function(p){ return {x:p.x,y:p.y,id:p.id,slot:p.slot,frag:p.frag,collected:false,mesh:null}; });
-    var totalPages = pages.length;
+    var FLOORS = DATA.floors;
+    var FLOOR_COUNT = FLOORS.length;
+    var coordTemplate = DATA.coordTemplate;
+    var totalPages = FLOORS.reduce(function(n,f){ return n + f.pages.length; }, 0);
 
-    function isWall(x,y){ return x<0||y<0||x>=W||y>=H || grid[y][x]==='#'; }
-    function doorAt(x,y){ for(var i=0;i<doors.length;i++) if(doors[i].x===x&&doors[i].y===y) return doors[i]; return null; }
-    function isClosedDoor(x,y){ var d=doorAt(x,y); return d && !d.open; }
-    function isBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
-    function sightBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
-    function pageAt(x,y){ for(var i=0;i<pages.length;i++) if(!pages[i].collected&&pages[i].x===x&&pages[i].y===y) return pages[i]; return null; }
-    function buttonAt(x,y){ for(var i=0;i<buttons.length;i++) if(buttons[i].x===x&&buttons[i].y===y) return buttons[i]; return null; }
+    // Global progress (persists across floors). Page ids namespaced "f<idx>_<id>".
+    var collected = {};                 // global page id -> true
+    var floorOpened = [], floorPressed = [], floorSeen = [];
+    for(var fi=0; fi<FLOOR_COUNT; fi++){ floorOpened[fi]={}; floorPressed[fi]={}; floorSeen[fi]={}; }
+    var lastCheckpoint = null;          // {floor,x,y,facing}
 
-    // Resolve which floor cell each button is pressed from (the side its panel faces).
     var DIRS = [{dx:0,dy:-1},{dx:1,dy:0},{dx:0,dy:1},{dx:-1,dy:0}]; // N,E,S,W
-    buttons.forEach(function(b){
-      for(var i=0;i<DIRS.length;i++){
-        var nx=b.x+DIRS[i].dx, ny=b.y+DIRS[i].dy;
-        if(nx<0||ny<0||nx>=W||ny>=H) continue;
-        if(grid[ny][nx]!=='#' && !doorAt(nx,ny)){ b.front={x:nx,y:ny}; b.faceVec=DIRS[i]; break; }
-      }
-    });
+
+    function findChar(F,ch){
+      for(var y=0;y<F.grid.length;y++){ var x=F.grid[y].indexOf(ch); if(x>=0) return {x:x,y:y}; }
+      return null;
+    }
 
     /* =========================================================================
        THREE.JS SCENE
@@ -386,9 +410,7 @@
 
     var camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.05, 200);
 
-    // Lights
-    var ambient = new THREE.AmbientLight(0x223044, AMBIENT);
-    scene.add(ambient);
+    var ambient = new THREE.AmbientLight(0x223044, AMBIENT); scene.add(ambient);
     var hemi = new THREE.HemisphereLight(0xa8c0e0, 0x0a0c10, 0); scene.add(hemi);
     var dir = new THREE.DirectionalLight(0xcfe0f5, 0); dir.position.set(0.4,1,0.25); scene.add(dir);
     var playerLight = new THREE.PointLight(0x86a0cc, PLAYER_LIGHT, PLAYER_LIGHT_DIST, PLAYER_LIGHT_DECAY);
@@ -396,56 +418,6 @@
 
     function cw(x){ return x*CELL; } // cell -> world coordinate
 
-    // Materials
-    var matFloor   = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.96, metalness:0.05 });
-    var matCeil    = new THREE.MeshStandardMaterial({ color:0x0e1014, roughness:1.0,  metalness:0.0  });
-    var matWall    = new THREE.MeshStandardMaterial({ color:0x141619, roughness:0.94, metalness:0.04 });
-    var matDoor    = new THREE.MeshStandardMaterial({ color:0x2b2f36, roughness:0.5,  metalness:0.55,
-                       emissive:0x401414, emissiveIntensity:0.6 });
-
-    // Floor + ceiling planes
-    var planeGeo = new THREE.PlaneGeometry(W*CELL, H*CELL);
-    var floor = new THREE.Mesh(planeGeo, matFloor);
-    floor.rotation.x = -Math.PI/2;
-    floor.position.set(cw((W-1)/2), 0, cw((H-1)/2));
-    scene.add(floor);
-    var ceil = new THREE.Mesh(planeGeo, matCeil);
-    ceil.rotation.x = Math.PI/2;
-    ceil.position.set(cw((W-1)/2), CELL, cw((H-1)/2));
-    scene.add(ceil);
-
-    // Walls
-    var wallGeo = new THREE.BoxGeometry(CELL, CELL, CELL);
-    for(var wy=0;wy<H;wy++) for(var wx=0;wx<W;wx++){
-      if(grid[wy][wx]==='#'){
-        var m = new THREE.Mesh(wallGeo, matWall);
-        m.position.set(cw(wx), CELL/2, cw(wy));
-        scene.add(m);
-      }
-    }
-
-    // Doors (full-cell blast doors that sink into the floor when opened)
-    var doorGeo = new THREE.BoxGeometry(CELL*0.94, CELL*0.98, CELL*0.94);
-    doors.forEach(function(d){
-      var m = new THREE.Mesh(doorGeo, matDoor.clone());
-      d.closedY = CELL*0.49; d.openY = d.closedY - CELL*1.04;
-      m.position.set(cw(d.x), d.closedY, cw(d.y));
-      scene.add(m); d.mesh = m;
-    });
-
-    // Buttons (emissive panel on a wall face)
-    var btnGeo = new THREE.BoxGeometry(0.55,0.55,0.16);
-    buttons.forEach(function(b){
-      if(!b.front) return;
-      var m = new THREE.Mesh(btnGeo, new THREE.MeshStandardMaterial({
-        color:0x1a1d22, roughness:0.4, metalness:0.6, emissive:0xff4a4a, emissiveIntensity:0.9 }));
-      var fv = b.faceVec;
-      m.position.set(cw(b.x) + fv.dx*(CELL/2-0.06), 1.35, cw(b.y) + fv.dy*(CELL/2-0.06));
-      if(fv.dx!==0) m.rotation.y = Math.PI/2;
-      scene.add(m); b.mesh = m;
-    });
-
-    // Pages (glowing sheet with a readable number)
     function makePageTexture(num){
       var c=document.createElement("canvas"); c.width=256; c.height=320;
       var g=c.getContext("2d");
@@ -459,48 +431,173 @@
       g.fillText("KALIBRIERUNG", 128, 272);
       var t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
     }
-    var pageGeo = new THREE.PlaneGeometry(1.25,1.55);
-    pages.forEach(function(p){
-      var tex = makePageTexture(p.frag);
-      var m = new THREE.Mesh(pageGeo, new THREE.MeshStandardMaterial({
-        map:tex, emissive:0xffffff, emissiveMap:tex, emissiveIntensity:0.85,
-        roughness:0.6, metalness:0.0, side:THREE.DoubleSide, transparent:true }));
-      m.position.set(cw(p.x), 1.45, cw(p.y));
-      scene.add(m); p.mesh = m;
-    });
 
-    // Exit marker (green beam + ring on the floor)
-    var exitGroup = new THREE.Group();
-    var beam = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,CELL,12),
-      new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.1, transparent:true, opacity:0.85 }));
-    beam.position.y = CELL/2; exitGroup.add(beam);
-    var ring = new THREE.Mesh(new THREE.TorusGeometry(CELL*0.36,0.06,8,24),
-      new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.0 }));
-    ring.rotation.x = Math.PI/2; ring.position.y = 0.05; exitGroup.add(ring);
-    exitGroup.position.set(cw(exitCell.x),0,cw(exitCell.y));
-    scene.add(exitGroup);
+    function makeLadder(kind){ // kind: "down"|"up" ; returns a group at the origin
+      var col = kind==="down" ? 0xffb347 : 0x5fd0ff;
+      var g = new THREE.Group();
+      var mat = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.6, metalness:0.5,
+        emissive:col, emissiveIntensity:0.55 });
+      var railGeo = new THREE.BoxGeometry(0.12,2.2,0.12);
+      var r1=new THREE.Mesh(railGeo,mat); r1.position.set(-0.34,1.1,0); g.add(r1);
+      var r2=new THREE.Mesh(railGeo,mat); r2.position.set(0.34,1.1,0); g.add(r2);
+      var rungGeo=new THREE.CylinderGeometry(0.05,0.05,0.78,8);
+      for(var yy=0.35; yy<=1.95; yy+=0.4){ var rg=new THREE.Mesh(rungGeo,mat); rg.rotation.z=Math.PI/2; rg.position.set(0,yy,0); g.add(rg); }
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(CELL*0.34,0.05,8,24),
+        new THREE.MeshStandardMaterial({ color:0x101316, emissive:col, emissiveIntensity:0.9 }));
+      ring.rotation.x=Math.PI/2; ring.position.y=0.04; g.add(ring);
+      var coneGeo=new THREE.ConeGeometry(0.28,0.5,12);
+      var cone=new THREE.Mesh(coneGeo, new THREE.MeshStandardMaterial({ color:0x101316, emissive:col, emissiveIntensity:1.0 }));
+      cone.position.set(0,2.55,0); if(kind==="down") cone.rotation.z=Math.PI;
+      g.add(cone);
+      var lp=new THREE.PointLight(col, 0.5, CELL*2.2, 2.0); lp.position.set(0,1.2,0); g.add(lp);
+      return g;
+    }
 
-    // Checkpoint marker (subtle blue ring)
-    if(checkpoint){
-      var cpRing = new THREE.Mesh(new THREE.TorusGeometry(CELL*0.3,0.05,8,24),
-        new THREE.MeshStandardMaterial({ color:0x0a2240, emissive:0x5fa8ff, emissiveIntensity:0.7 }));
-      cpRing.rotation.x = Math.PI/2; cpRing.position.set(cw(checkpoint.x),0.05,cw(checkpoint.y));
-      scene.add(cpRing);
+    /* =========================================================================
+       CURRENT-FLOOR RUNTIME STATE  (reassigned by loadFloor)
+       ========================================================================= */
+    var curFloor = 0, floorRoot = null;
+    var grid, W, H, doors, buttons, pages, exitCell, checkpoint, upCell, downCell, seen;
+    var beam = null;   // exit beam material holder for pulsing (last floor only)
+
+    function isWall(x,y){ return x<0||y<0||x>=W||y>=H || grid[y][x]==='#'; }
+    function doorAt(x,y){ for(var i=0;i<doors.length;i++) if(doors[i].x===x&&doors[i].y===y) return doors[i]; return null; }
+    function doorById(id){ for(var i=0;i<doors.length;i++) if(doors[i].id===id) return doors[i]; return null; }
+    function isClosedDoor(x,y){ var d=doorAt(x,y); return d && !d.open; }
+    function isBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
+    function sightBlocked(x,y){ return isWall(x,y) || isClosedDoor(x,y); }
+    function pageAt(x,y){ for(var i=0;i<pages.length;i++) if(!pages[i].collected&&pages[i].x===x&&pages[i].y===y) return pages[i]; return null; }
+    function buttonAt(x,y){ for(var i=0;i<buttons.length;i++) if(buttons[i].x===x&&buttons[i].y===y) return buttons[i]; return null; }
+
+    function disposeGroup(g){
+      g.traverse(function(o){
+        if(o.geometry) o.geometry.dispose();
+        if(o.material){ var m=o.material;
+          if(m.map) m.map.dispose(); if(m.emissiveMap) m.emissiveMap.dispose(); m.dispose(); }
+      });
+    }
+
+    function loadFloor(idx, pos, facing){
+      if(floorRoot){ scene.remove(floorRoot); disposeGroup(floorRoot); }
+      floorRoot = new THREE.Group(); scene.add(floorRoot);
+      curFloor = idx;
+      var F = FLOORS[idx];
+      grid = F.grid; W = F.w || grid[0].length; H = F.h || grid.length;
+      upCell = F.up; downCell = F.down; exitCell = F.exit; checkpoint = F.checkpoint;
+      seen = floorSeen[idx];
+      beam = null;
+
+      doors = F.doors.map(function(d){
+        return { x:d.x, y:d.y, id:d.id, open:!!floorOpened[idx][d.id], mesh:null, closedY:0, openY:0 }; });
+      buttons = F.buttons.map(function(b){
+        return { x:b.x, y:b.y, id:b.id, opens:b.opens, pressed:!!floorPressed[idx][b.id], mesh:null, front:null, faceVec:null }; });
+      pages = F.pages.map(function(p){
+        return { x:p.x, y:p.y, id:p.id, slot:p.slot, frag:p.frag, collected:!!collected["f"+idx+"_"+p.id], mesh:null }; });
+
+      // resolve button press-cells
+      buttons.forEach(function(b){
+        for(var i=0;i<DIRS.length;i++){
+          var nx=b.x+DIRS[i].dx, ny=b.y+DIRS[i].dy;
+          if(nx<0||ny<0||nx>=W||ny>=H) continue;
+          if(grid[ny][nx]!=='#' && !doorAt(nx,ny)){ b.front={x:nx,y:ny}; b.faceVec=DIRS[i]; break; }
+        }
+      });
+
+      // materials (per-floor so disposeGroup can free them cleanly)
+      var matFloor = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.96, metalness:0.05 });
+      var matCeil  = new THREE.MeshStandardMaterial({ color:0x0e1014, roughness:1.0,  metalness:0.0  });
+      var matWall  = new THREE.MeshStandardMaterial({ color:0x141619, roughness:0.94, metalness:0.04 });
+
+      var planeGeo = new THREE.PlaneGeometry(W*CELL, H*CELL);
+      var fl = new THREE.Mesh(planeGeo, matFloor); fl.rotation.x=-Math.PI/2;
+      fl.position.set(cw((W-1)/2),0,cw((H-1)/2)); floorRoot.add(fl);
+      var cl = new THREE.Mesh(planeGeo, matCeil); cl.rotation.x=Math.PI/2;
+      cl.position.set(cw((W-1)/2),CELL,cw((H-1)/2)); floorRoot.add(cl);
+
+      var wallGeo = new THREE.BoxGeometry(CELL,CELL,CELL);
+      for(var wy=0;wy<H;wy++) for(var wx=0;wx<W;wx++){
+        if(grid[wy][wx]==='#'){ var m=new THREE.Mesh(wallGeo,matWall); m.position.set(cw(wx),CELL/2,cw(wy)); floorRoot.add(m); }
+      }
+
+      var doorGeo = new THREE.BoxGeometry(CELL*0.94,CELL*0.98,CELL*0.94);
+      doors.forEach(function(d){
+        var dm = new THREE.MeshStandardMaterial({ color:0x2b2f36, roughness:0.5, metalness:0.55,
+          emissive: d.open?0x143a20:0x401414, emissiveIntensity:0.6 });
+        var m = new THREE.Mesh(doorGeo, dm);
+        d.closedY = CELL*0.49; d.openY = d.closedY - CELL*1.04;
+        m.position.set(cw(d.x), d.open?d.openY:d.closedY, cw(d.y));
+        floorRoot.add(m); d.mesh=m;
+      });
+
+      var btnGeo = new THREE.BoxGeometry(0.55,0.55,0.16);
+      buttons.forEach(function(b){
+        if(!b.front) return;
+        var m = new THREE.Mesh(btnGeo, new THREE.MeshStandardMaterial({
+          color:0x1a1d22, roughness:0.4, metalness:0.6,
+          emissive: b.pressed?0x62ff9c:0xff4a4a, emissiveIntensity:0.9 }));
+        var fv=b.faceVec;
+        m.position.set(cw(b.x)+fv.dx*(CELL/2-0.06), 1.35, cw(b.y)+fv.dy*(CELL/2-0.06));
+        if(fv.dx!==0) m.rotation.y=Math.PI/2;
+        floorRoot.add(m); b.mesh=m;
+      });
+
+      var pageGeo = new THREE.PlaneGeometry(1.25,1.55);
+      pages.forEach(function(p){
+        if(p.collected) return;
+        var tex = makePageTexture(p.frag);
+        var m = new THREE.Mesh(pageGeo, new THREE.MeshStandardMaterial({
+          map:tex, emissive:0xffffff, emissiveMap:tex, emissiveIntensity:0.85,
+          roughness:0.6, metalness:0.0, side:THREE.DoubleSide, transparent:true }));
+        m.position.set(cw(p.x),1.45,cw(p.y));
+        floorRoot.add(m); p.mesh=m;
+      });
+
+      // exit (last floor)
+      if(exitCell){
+        var eg=new THREE.Group();
+        var bMat=new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.1, transparent:true, opacity:0.85 });
+        var bm=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,CELL,12), bMat); bm.position.y=CELL/2; eg.add(bm);
+        var rm=new THREE.Mesh(new THREE.TorusGeometry(CELL*0.36,0.06,8,24),
+          new THREE.MeshStandardMaterial({ color:0x0a3a1f, emissive:0x62ff9c, emissiveIntensity:1.0 }));
+        rm.rotation.x=Math.PI/2; rm.position.y=0.05; eg.add(rm);
+        eg.position.set(cw(exitCell.x),0,cw(exitCell.y)); floorRoot.add(eg);
+        beam = bMat;
+      }
+      // checkpoint
+      if(checkpoint){
+        var cpr=new THREE.Mesh(new THREE.TorusGeometry(CELL*0.3,0.05,8,24),
+          new THREE.MeshStandardMaterial({ color:0x0a2240, emissive:0x5fa8ff, emissiveIntensity:0.7 }));
+        cpr.rotation.x=Math.PI/2; cpr.position.set(cw(checkpoint.x),0.05,cw(checkpoint.y)); floorRoot.add(cpr);
+      }
+      // ladders
+      if(downCell){ var ld=makeLadder("down"); ld.position.set(cw(downCell.x),0,cw(downCell.y)); floorRoot.add(ld); }
+      if(upCell){ var lu=makeLadder("up"); lu.position.set(cw(upCell.x),0,cw(upCell.y)); floorRoot.add(lu); }
+
+      // place player
+      player.cx=pos.x; player.cy=pos.y; player.facing=facing;
+      cam.x=cw(pos.x); cam.z=cw(pos.y); cam.yaw=yawFor(facing);
+      anim=null; inputBuffer=null;
+
+      document.getElementById("floorLbl").textContent = "EBENE "+(idx+1)+" / "+FLOOR_COUNT;
+      doFlashReveal();
+      updatePagesHUD();
     }
 
     /* =========================================================================
        PLAYER + CAMERA STATE
        ========================================================================= */
-    var player = { cx:spawn.x, cy:spawn.y, facing:(LEVEL.spawnFacing||0) };
+    var player = { cx:0, cy:0, facing:0 };
     function yawFor(f){ return -f * (Math.PI/2); }
-    var cam = { x:cw(player.cx), z:cw(player.cy), yaw:yawFor(player.facing) };
-    var anim = null;       // {t,dur,from,to,onArrive}
+    var cam = { x:0, z:0, yaw:0 };
+    var anim = null;
     var inputBuffer = null;
-    var fx = [];           // transient visual effects: fn(dt)->done?
+    var fx = [];
+    var transitioning = false;
 
     function easeInOut(t){ return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
 
     function commitMove(d){
+      if(transitioning) return;
       if(anim){ inputBuffer=function(){ commitMove(d); }; return; }
       var v=DIRS[player.facing];
       var nx=player.cx+v.dx*d, ny=player.cy+v.dy*d;
@@ -510,7 +607,8 @@
         from:{x:cam.x,z:cam.z,yaw:cam.yaw}, to:{x:cw(nx),z:cw(ny),yaw:cam.yaw},
         onArrive:function(){ onEnterCell(nx,ny); } };
     }
-    function commitTurn(d){ // d:-1 left, +1 right
+    function commitTurn(d){
+      if(transitioning) return;
       if(anim){ inputBuffer=function(){ commitTurn(d); }; return; }
       player.facing=(player.facing+d+4)%4;
       anim={ t:0,dur:MOVE_DURATION,
@@ -524,41 +622,60 @@
     }
 
     function onEnterCell(x,y){
-      if(checkpoint && x===checkpoint.x && y===checkpoint.y){ saveGame(); toast("Fortschritt gesichert","good"); }
-      var p=pageAt(x,y);
-      if(p){ collectPage(p); }
-      if(x===exitCell.x && y===exitCell.y){ tryExit(); }
+      if(checkpoint && x===checkpoint.x && y===checkpoint.y){
+        lastCheckpoint={floor:curFloor,x:x,y:y,facing:player.facing};
+        saveGame(); toast("Kontrollpunkt gesichert · Ebene "+(curFloor+1),"good");
+      }
+      var p=pageAt(x,y); if(p) collectPage(p);
+      if(downCell && x===downCell.x && y===downCell.y){ changeFloor(curFloor+1, FLOORS[curFloor+1].up, player.facing, "hinab"); return; }
+      if(upCell   && x===upCell.x   && y===upCell.y){   changeFloor(curFloor-1, FLOORS[curFloor-1].down, player.facing, "hinauf"); return; }
+      if(exitCell && x===exitCell.x && y===exitCell.y){ tryExit(); }
     }
 
     function collectPage(p){
-      p.collected=true;
+      p.collected=true; collected["f"+curFloor+"_"+p.id]=true;
       var mesh=p.mesh, t=0;
-      fx.push(function(dt){ t+=dt; var k=Math.min(t/0.4,1);
-        mesh.scale.setScalar(1+0.6*k); mesh.material.opacity=0.85*(1-k);
-        mesh.position.y=1.45+0.6*k;
-        if(k>=1){ scene.remove(mesh); return true; } return false; });
+      if(mesh) fx.push(function(dt){ t+=dt; var k=Math.min(t/0.4,1);
+        mesh.scale.setScalar(1+0.6*k); mesh.material.opacity=0.85*(1-k); mesh.position.y=1.45+0.6*k;
+        if(k>=1){ floorRoot.remove(mesh); return true; } return false; });
       updatePagesHUD();
       toast("Seite geborgen · Fragment "+p.frag,"good");
     }
 
     function pressButton(b){
       if(b.pressed){ toast("Schalter bereits aktiviert","warn"); return; }
-      b.pressed=true;
-      if(b.mesh){ b.mesh.material.emissive.setHex(0x62ff9c); }
-      b.opens.forEach(function(id){ var d=doorAt2(id); if(d) openDoor(d); });
+      b.pressed=true; floorPressed[curFloor][b.id]=true;
+      if(b.mesh) b.mesh.material.emissive.setHex(0x62ff9c);
+      b.opens.forEach(function(id){ var d=doorById(id); if(d) openDoor(d); });
+      saveGame();
       toast("KLACK — irgendwo öffnet sich eine Tür","good");
     }
-    function doorAt2(id){ for(var i=0;i<doors.length;i++) if(doors[i].id===id) return doors[i]; return null; }
     function openDoor(d){
-      if(d.open) return; d.open=true;
+      if(d.open) return; d.open=true; floorOpened[curFloor][d.id]=true;
       if(d.mesh) d.mesh.material.emissive.setHex(0x143a20);
     }
 
+    function collectedCount(){ var n=0; for(var k in collected) if(collected[k]) n++; return n; }
+
     function tryExit(){
-      var have=0; pages.forEach(function(p){ if(p.collected) have++; });
+      var have=collectedCount();
       if(have>=totalPages){ showSuccess(); }
       else { toast("DIE ANLAGE VERWEIGERT DIE FREIGABE — noch "+(totalPages-have)+
-                   " Seite(n) im Dunkeln. Kehr zurück.","bad", 3200); pulseVignette(); }
+                   " Seite(n) im Dunkeln. Kehr zurück.","bad",3400); pulseVignette(); }
+    }
+
+    var fadeEl=document.getElementById("fade");
+    function changeFloor(idx, pos, facing, word){
+      if(transitioning) return;
+      transitioning=true; anim=null; inputBuffer=null;
+      fadeEl.style.opacity="1";
+      setTimeout(function(){
+        loadFloor(idx, pos, facing);
+        saveGame();
+        toast("EBENE "+(idx+1)+" · "+(word||""),"warn",1600);
+        fadeEl.style.opacity="0";
+        setTimeout(function(){ transitioning=false; }, 360);
+      }, 360);
     }
 
     function bump(){
@@ -578,10 +695,11 @@
        INTERACT
        ========================================================================= */
     function interact(){
+      if(transitioning) return;
       if(anim){ inputBuffer=interact; return; }
       var v=DIRS[player.facing];
-      var fx2=player.cx+v.dx, fy2=player.cy+v.dy; // cell directly in front
-      var b=buttonAt(fx2,fy2);
+      var fxc=player.cx+v.dx, fyc=player.cy+v.dy;
+      var b=buttonAt(fxc,fyc);
       if(b && b.front && b.front.x===player.cx && b.front.y===player.cy){ pressButton(b); }
       else { toast("Hier ist nichts zu bedienen","warn",1200); }
     }
@@ -590,7 +708,6 @@
        CLOCK / BEATS / FLASH
        ========================================================================= */
     var elapsed=0, lastBeatIndex=-1, lastFlashStart=-999, flashSeenNow=null;
-    var seen = {};        // revealed cells "x,y" -> true (fog of war)
 
     function markSeen(x,y){ if(x<0||y<0||x>=W||y>=H) return; var k=x+","+y; seen[k]=true; if(flashSeenNow) flashSeenNow[k]=true; }
     function doFlashReveal(){
@@ -611,7 +728,7 @@
       var beat=Math.floor(elapsed/BEAT);
       if(beat>lastBeatIndex){
         for(var b=lastBeatIndex+1;b<=beat;b++){
-          if(b>0 && b % FLASH_INTERVAL_BEATS === 0){ lastFlashStart=b*BEAT; doFlashReveal(); }
+          if(b>0 && b % FLASH_INTERVAL_BEATS === 0){ lastFlashStart=b*BEAT; if(!transitioning) doFlashReveal(); }
         }
         lastBeatIndex=beat;
       }
@@ -627,48 +744,46 @@
         if(dt<hold+fade) return peak*(1-(dt-hold)/fade);
         return 0;
       }
-      if(dt<0.04) return dt/0.04;                       // attack
-      if(dt<FLASH_DURATION) return Math.min(1,0.86+0.14*Math.sin(dt*55)); // bright + flicker
+      if(dt<0.04) return dt/0.04;
+      if(dt<FLASH_DURATION) return Math.min(1,0.86+0.14*Math.sin(dt*55));
       if(dt<FLASH_DURATION+FLASH_FADE) return 1-(dt-FLASH_DURATION)/FLASH_FADE;
       return 0;
     }
 
     /* =========================================================================
-       MINIMAP (fog of war)
+       MINIMAP (fog of war, per floor)
        ========================================================================= */
     var mm=document.getElementById("minimap"), mmx=mm.getContext("2d");
     var MM_PX=16; mm.width=MMAP_CELLS*MM_PX; mm.height=MMAP_CELLS*MM_PX;
     function drawMinimap(){
-      var fl=flashLevel(), r=(MMAP_CELLS-1)/2, cs=MM_PX;
+      var flv=flashLevel(), r=(MMAP_CELLS-1)/2, cs=MM_PX;
       mmx.fillStyle="#0b0d10"; mmx.fillRect(0,0,mm.width,mm.height);
       for(var oy=-r;oy<=r;oy++) for(var ox=-r;ox<=r;ox++){
         var cx=player.cx+ox, cy=player.cy+oy, k=cx+","+cy;
         if(!seen[k]) continue;
-        var sx=(ox+r)*cs, sy=(oy+r)*cs;
-        var col, mark=null;
-        if(isWall(cx,cy)) col="#2b323c";
-        else col="#1a2028";
+        var sx=(ox+r)*cs, sy=(oy+r)*cs, col, mark=null;
+        if(isWall(cx,cy)) col="#2b323c"; else col="#1a2028";
         var d=doorAt(cx,cy); if(d) mark = d.open ? "#2f6b45" : "#ff4a4a";
         var b=buttonAt(cx,cy); if(b) mark = b.pressed ? "#62ff9c" : "#ffb347";
-        if(cx===exitCell.x&&cy===exitCell.y) mark="#62ff9c";
-        if(checkpoint&&cx===checkpoint.x&&cy===checkpoint.y) mark="#5fa8ff";
+        if(downCell && cx===downCell.x && cy===downCell.y) mark="#ffb347";
+        if(upCell && cx===upCell.x && cy===upCell.y) mark="#5fd0ff";
+        if(exitCell && cx===exitCell.x && cy===exitCell.y) mark="#62ff9c";
+        if(checkpoint && cx===checkpoint.x && cy===checkpoint.y) mark="#5fa8ff";
         var pg=pageAt(cx,cy); if(pg) mark="#62ff9c";
-        var bright = (flashSeenNow && flashSeenNow[k]) ? (0.55+0.45*fl) : 0.55;
+        var bright = (flashSeenNow && flashSeenNow[k]) ? (0.55+0.45*flv) : 0.55;
         mmx.globalAlpha=bright; mmx.fillStyle=col; mmx.fillRect(sx,sy,cs,cs);
-        if(mark){ mmx.globalAlpha=Math.min(1,bright+0.25); mmx.fillStyle=mark;
-          mmx.fillRect(sx+1,sy+1,cs-2,cs-2); }
+        if(mark){ mmx.globalAlpha=Math.min(1,bright+0.25); mmx.fillStyle=mark; mmx.fillRect(sx+1,sy+1,cs-2,cs-2); }
       }
-      // player arrow (center)
       mmx.globalAlpha=1;
-      var px=(r+0.5)*cs, py=(r+0.5)*cs, a=player.facing*(Math.PI/2);
-      mmx.save(); mmx.translate(px,py); mmx.rotate(a);
+      var pxp=(r+0.5)*cs, pyp=(r+0.5)*cs, a=player.facing*(Math.PI/2);
+      mmx.save(); mmx.translate(pxp,pyp); mmx.rotate(a);
       mmx.fillStyle="#ffffff"; mmx.beginPath();
       mmx.moveTo(0,-cs*0.5); mmx.lineTo(cs*0.38,cs*0.45); mmx.lineTo(-cs*0.38,cs*0.45); mmx.closePath(); mmx.fill();
       mmx.restore();
     }
 
     /* =========================================================================
-       METRONOME (visual, drives anticipation of the flash)
+       METRONOME (visual)
        ========================================================================= */
     var mdots=document.querySelectorAll("#metroDots .md");
     var metroEl=document.getElementById("metronome");
@@ -694,14 +809,13 @@
         toastEl=document.getElementById("toast");
     pageTotalEl.textContent=totalPages;
     function updatePagesHUD(){
-      var have=0; pages.forEach(function(p){ if(p.collected) have++; });
-      pageCountEl.textContent=have;
-      var ordered=pages.slice().sort(function(a,b){ return a.slot-b.slot; });
-      notebookEl.innerHTML = ordered.map(function(p){
-        return p.collected ? "<b>"+p.frag+"</b>" : "<span>··</span>";
-      }).join(" ");
+      pageCountEl.textContent=collectedCount();
+      var all=[];
+      FLOORS.forEach(function(F,fidx){ F.pages.forEach(function(p){
+        all.push({slot:p.slot, frag:p.frag, got:!!collected["f"+fidx+"_"+p.id]}); }); });
+      all.sort(function(a,b){ return a.slot-b.slot; });
+      notebookEl.innerHTML = all.map(function(p){ return p.got ? "<b>"+p.frag+"</b>" : "<span>··</span>"; }).join(" ");
     }
-    var toastTimer=null;
     function toast(msg,type,dur){
       var el=document.createElement("div"); el.className="toast "+(type||"");
       el.textContent=msg; toastEl.appendChild(el);
@@ -709,31 +823,28 @@
     }
 
     /* =========================================================================
-       SAVE / LOAD  (checkpoints = quiet autosave; no death/reset)
+       SAVE / LOAD  (multi-floor; checkpoints = quiet autosave; no death yet)
        ========================================================================= */
-    var SAVE_KEY="dunkelprotokoll_save_v1";
+    var SAVE_KEY="dunkelprotokoll_save_v2";
     function saveGame(){
       try{
-        var data={ cx:player.cx, cy:player.cy, facing:player.facing,
-          pages:pages.filter(function(p){return p.collected;}).map(function(p){return p.id;}),
-          doors:doors.filter(function(d){return d.open;}).map(function(d){return d.id;}),
-          buttons:buttons.filter(function(b){return b.pressed;}).map(function(b){return b.id;}),
-          seen:Object.keys(seen) };
+        var data={ floor:curFloor, cx:player.cx, cy:player.cy, facing:player.facing,
+          collected:Object.keys(collected),
+          opened:floorOpened.map(function(o){ return Object.keys(o); }),
+          pressed:floorPressed.map(function(o){ return Object.keys(o); }),
+          seen:floorSeen.map(function(o){ return Object.keys(o); }),
+          checkpoint:lastCheckpoint };
         localStorage.setItem(SAVE_KEY, JSON.stringify(data));
       }catch(e){}
     }
     function loadSave(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return null; } }
     function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
     function applySave(s){
-      player.cx=s.cx; player.cy=s.cy; player.facing=s.facing;
-      cam.x=cw(player.cx); cam.z=cw(player.cy); cam.yaw=yawFor(player.facing);
-      (s.buttons||[]).forEach(function(id){ var b=buttons.filter(function(b){return b.id===id;})[0];
-        if(b){ b.pressed=true; if(b.mesh) b.mesh.material.emissive.setHex(0x62ff9c); } });
-      (s.doors||[]).forEach(function(id){ var d=doorAt2(id); if(d){ d.open=true;
-        if(d.mesh){ d.mesh.position.y=d.openY; d.mesh.material.emissive.setHex(0x143a20); } } });
-      (s.pages||[]).forEach(function(id){ var p=pages.filter(function(p){return p.id===id;})[0];
-        if(p){ p.collected=true; if(p.mesh){ scene.remove(p.mesh); } } });
-      (s.seen||[]).forEach(function(k){ seen[k]=true; });
+      (s.collected||[]).forEach(function(k){ collected[k]=true; });
+      (s.opened||[]).forEach(function(arr,fidx){ arr.forEach(function(id){ if(floorOpened[fidx]) floorOpened[fidx][id]=true; }); });
+      (s.pressed||[]).forEach(function(arr,fidx){ arr.forEach(function(id){ if(floorPressed[fidx]) floorPressed[fidx][id]=true; }); });
+      (s.seen||[]).forEach(function(arr,fidx){ arr.forEach(function(k){ if(floorSeen[fidx]) floorSeen[fidx][k]=true; }); });
+      if(s.checkpoint) lastCheckpoint=s.checkpoint;
     }
 
     /* =========================================================================
@@ -741,9 +852,11 @@
        ========================================================================= */
     var running=false;
     function assembleCoords(){
-      var fr=pages.slice().filter(function(p){return p.collected;})
-        .sort(function(a,b){return a.slot-b.slot;}).map(function(p){return p.frag;}).join("");
-      var i=0; return LEVEL.coordTemplate.replace(/\{\}/g, function(){ return fr[i++]!==undefined?fr[i-1]:"X"; });
+      var all=[];
+      FLOORS.forEach(function(F,fidx){ F.pages.forEach(function(p){ if(collected["f"+fidx+"_"+p.id]) all.push(p); }); });
+      all.sort(function(a,b){ return a.slot-b.slot; });
+      var fr=all.map(function(p){ return p.frag; }).join("");
+      var i=0; return coordTemplate.replace(/\{\}/g, function(){ return fr[i++]!==undefined?fr[i-1]:"X"; });
     }
     function showSuccess(){
       running=false;
@@ -756,7 +869,7 @@
        INPUT
        ========================================================================= */
     function act(a){
-      if(!running) return;
+      if(!running || transitioning) return;
       if(a==="forward") commitMove(1);
       else if(a==="back") commitMove(-1);
       else if(a==="left") commitTurn(-1);
@@ -774,7 +887,6 @@
       else handled=false;
       if(handled) e.preventDefault();
     });
-    // D-pad (touch + click)
     var dpad=document.getElementById("dpad");
     dpad.querySelectorAll(".dbtn").forEach(function(btn){
       var a=btn.getAttribute("data-act");
@@ -796,8 +908,7 @@
       audio.addEventListener("canplaythrough", function(){ audioOk=true; });
       audio.addEventListener("error", function(){ audioOk=false; soundOn=false; refreshSoundBtn(); });
     }
-    function refreshSoundBtn(){ soundBtn.innerHTML = soundOn ? "🔊" : "🔇";
-      soundBtn.classList.toggle("off", !soundOn); }
+    function refreshSoundBtn(){ soundBtn.innerHTML = soundOn ? "🔊" : "🔇"; soundBtn.classList.toggle("off", !soundOn); }
     function toggleSound(){
       soundOn=!soundOn; initAudio();
       if(soundOn){ audio.play().catch(function(){ soundOn=false; refreshSoundBtn(); }); }
@@ -805,10 +916,7 @@
       refreshSoundBtn();
     }
     soundBtn.addEventListener("click", toggleSound);
-
-    document.getElementById("restartBtn").addEventListener("click", function(){
-      clearSave(); location.reload();
-    });
+    document.getElementById("restartBtn").addEventListener("click", function(){ clearSave(); location.reload(); });
 
     /* =========================================================================
        MAIN LOOP
@@ -820,28 +928,23 @@
       if(dt>0.05) dt=0.05;
       if(running && !document.hidden){ elapsed+=dt; updateBeats(); }
 
-      // movement / turn animation
-      if(anim){
+      if(anim && !transitioning){
         anim.t+=dt/anim.dur; var e=easeInOut(Math.min(anim.t,1));
         cam.x=anim.from.x+(anim.to.x-anim.from.x)*e;
         cam.z=anim.from.z+(anim.to.z-anim.from.z)*e;
         cam.yaw=anim.from.yaw+(anim.to.yaw-anim.from.yaw)*e;
         if(anim.t>=1){ cam.x=anim.to.x; cam.z=anim.to.z; cam.yaw=anim.to.yaw; finishAnim(); }
       }
-      // transient fx
       for(var i=fx.length-1;i>=0;i--){ if(fx[i](dt)) fx.splice(i,1); }
 
-      // doors sliding
-      doors.forEach(function(d){ if(d.mesh && d.open && d.mesh.position.y>d.openY){
+      if(doors) doors.forEach(function(d){ if(d.mesh && d.open && d.mesh.position.y>d.openY){
         d.mesh.position.y=Math.max(d.openY, d.mesh.position.y - dt*(CELL*1.7)); } });
 
-      // camera
       camera.position.set(cam.x+bumpOffset.x, EYE, cam.z+bumpOffset.z);
       camera.rotation.set(0, cam.yaw, 0);
       playerLight.position.set(cam.x, EYE, cam.z);
       dir.position.set(cam.x+4, 12, cam.z+3);
 
-      // lighting / fog via flash envelope
       var fl=flashLevel();
       scene.fog.density = FOG_DARK + (FOG_FLASH-FOG_DARK)*fl;
       hemi.intensity = FLASH_HEMI*fl;
@@ -849,12 +952,11 @@
       playerLight.intensity = PLAYER_LIGHT + fl*1.0;
       document.getElementById("flash").style.opacity = (fl*(reducedMotion?0.05:0.10)).toFixed(3);
 
-      // pages bob/rotate, exit pulse
       var tnow=elapsed;
-      pages.forEach(function(p){ if(p.mesh && !p.collected){
+      if(pages) pages.forEach(function(p){ if(p.mesh && !p.collected){
         p.mesh.rotation.y += dt*(reducedMotion?0.3:0.9);
         p.mesh.position.y = 1.45 + Math.sin(tnow*1.6 + p.x)*0.06; } });
-      beam.material.emissiveIntensity = 0.9 + Math.sin(tnow*2.2)*0.3;
+      if(beam) beam.emissiveIntensity = 0.9 + Math.sin(tnow*2.2)*0.3;
 
       if(running){ drawMinimap(); updateMetronome(); }
       renderer.render(scene,camera);
@@ -873,21 +975,23 @@
     if(existing){
       var note=document.getElementById("resumeNote");
       note.style.display="block";
-      note.innerHTML="Gespeicherter Fortschritt gefunden — du setzt am letzten Kontrollpunkt fort. "+
-        "(↻ oben rechts startet die Ebene neu.)";
+      note.innerHTML="Gespeicherter Fortschritt gefunden — du setzt auf Ebene "+
+        ((existing.floor||0)+1)+" fort. (↻ oben rechts startet neu.)";
     }
     updatePagesHUD();
 
     function startGame(){
       document.getElementById("startScreen").classList.add("hidden");
-      if(existing){ applySave(existing); }
       if(document.getElementById("sndChk").checked && !soundOn){ toggleSound(); }
-      // initial orientation reveal so the first bar isn't a total void
-      doFlashReveal();
-      lastFlashStart=-999; // but no full flash light yet; reveal only
-      elapsed=0; lastBeatIndex=-1; last=performance.now();
+      elapsed=0; lastBeatIndex=-1; lastFlashStart=-999; last=performance.now();
+      if(existing){
+        applySave(existing);
+        loadFloor(existing.floor||0, {x:existing.cx, y:existing.cy}, existing.facing||0);
+      } else {
+        var s=findChar(FLOORS[0],'S') || {x:1,y:1};
+        loadFloor(0, s, FLOORS[0].spawnFacing||0);
+      }
       running=true;
-      updatePagesHUD();
     }
     document.getElementById("startBtn").addEventListener("click", startGame);
     document.getElementById("againBtn").addEventListener("click", function(){ clearSave(); location.reload(); });
