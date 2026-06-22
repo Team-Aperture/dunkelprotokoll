@@ -28,8 +28,10 @@
 
 const KEY = "K4l1br1erungsanlage-Dunkelprotokoll";
 
+// NOTE: this is an EXAMPLE template, not the shipped floor (that one is produced
+// by tools/generate-maze.js). Edit it freely to hand-author a bespoke level.
 const LEVEL = {
-  name: "ANLAGE 1 — KALIBRIERUNGSEBENE",
+  name: "BEISPIEL-EBENE (Vorlage)",
   spawnFacing: 1,
   grid: [
     "###########",
