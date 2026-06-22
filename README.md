@@ -2,8 +2,9 @@
 
 A first-person, grid-based 3D maze for the browser. The facility has lost power
 during a storm — you can only see during brief **lightning flashes**. Feel your
-way through the dark, press buttons to open doors, collect every **page**, and
-reach the exit to have the facility release its coordinates.
+way through the dark, press buttons to open doors, **descend three floors by
+ladder**, collect every **page** on every floor, and reach the bottom exit to
+have the facility release its coordinates.
 
 Built as a single self-contained file (`index.html`) using **Three.js r128**.
 Fully playable on desktop (keyboard) and mobile (on-screen D-pad), and fully
@@ -25,11 +26,13 @@ python3 -m http.server 8000   # then open http://localhost:8000
 | Move forward / back | `W` `S` or `↑` `↓` | D-pad up / down |
 | Turn left / right | `A` `D` or `←` `→` | D-pad left / right |
 | Press button / interact | `Space` | center **DRUCK** button |
+| Use a ladder (change floor) | step onto it | step onto it |
 
 There is **no strafe** and **no death/reset** — navigation in the dark is the
-only challenge. Checkpoint cells act as a **quiet autosave**: step on one and
-your position, opened doors, collected pages, and explored map are stored, so a
-refresh or accidental close resumes you there (`↻` top-right restarts the floor).
+only challenge (a hunter enemy is a later planned pass). Progress spans all three
+floors. Checkpoint cells act as a **quiet autosave** (floor, position, opened
+doors, collected pages, explored map), so a refresh or accidental close resumes
+you there (`↻` top-right restarts from scratch).
 
 ### Seeing in the dark
 
@@ -75,20 +78,21 @@ the repo, or poking the console reveals no readable grid, page numbers, or
 coordinates. There are two authoring paths; both **validate solvability**
 (reachability, door gating, slot/digit counts) and print a ready-to-paste blob.
 
-**Procedural** — how the current floor is made:
+**Procedural** — how the current floors are made:
 
 ```bash
-node tools/generate-maze.js     # 21x17, START_SEED=1 == the shipped floor
+node tools/generate-maze.js     # 3 linked floors (the shipped game)
 ```
 
-Edit `W`/`H` for a bigger/smaller maze or `START_SEED` for a different layout; it
-auto-places spawn, a door-gated exit, the button, 5 spread-out pages, and a
-checkpoint. The maze is never committed as plaintext — only the algorithm + seed.
+Edit `FLOOR_SPECS` (per-floor width, height, seed, page slots) to resize or
+reshuffle. It auto-places spawn, ladders, a door-gated descent per floor, the
+final exit, buttons, spread-out pages, and checkpoints, validating every floor.
+The mazes are never committed as plaintext — only the algorithm + seeds.
 
 **Hand-authored** — bespoke layouts:
 
 ```bash
-node tools/encode-level.js      # edit the example LEVEL object first
+node tools/encode-level.js      # edit the example floor(s) first
 ```
 
 Either way, paste the printed `var LEVEL_BLOB = "...";` into `index.html`. No
@@ -98,8 +102,9 @@ Grid legend: `#` wall · `.` floor · `S` spawn · `E` exit · `C` checkpoint.
 
 ## Scope
 
-This is the **engine + one test floor** for playtesting feel. The final three
-floors are intentionally not built yet — design them later via the workflow above.
+This is the **engine + three procedurally generated floors** linked by ladders.
+Tune floor size/difficulty via `FLOOR_SPECS` in the generator. A hunter enemy
+(the V-NTG) is the next planned pass.
 
 ## A note on the source
 
