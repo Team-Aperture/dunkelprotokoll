@@ -317,6 +317,7 @@
     var ENEMY_LOSE_TIME = 5.0;        // seconds out of range before she gives up the hunt
     var ENEMY_CATCH_DIST= 0.55;       // catch radius in cells
     var RESPAWN_GRACE   = 1.8;        // seconds of invulnerability after a respawn
+    var MERCY_DEATHS    = 10;         // after this many deaths on a floor, the V-TGM is shut down there
 
     var BG = 0x17191d;
     var BEAT = 60 / BPM;
@@ -346,54 +347,54 @@
     var LEVEL_KEY  = "K4l1br1erungsanlage-Dunkelprotokoll";
     var LEVEL_BLOB =
       "MBYKXQ0dQxZQTzUcUQ8PAQRFXw8BNyslIExBUENWGElVXVVnFgQTWEMESVAGHgYEDygNAg4LSm" +
-      "ZPXEdHCwIbC1ZVME1PT2gXTxJBURJGUVZNRFBCTU9CRUkPZyZNRUtCXlxMWkFFQS9CZRpCEkBe" +
+      "ZPXEdHCwIbC1ZVME1PT2gXTxJBURJGUVZNRFBCTU9CRUkPZyZNRUtCXlxBN0FFQUJCZRpCEkBe" +
       "E0ZcVkBEUEJAT09ERg5nVk1IS09SXk1XQUhBT0JoGk8fQVwfS1FbQElQQ0JOQklGA2dbTUVGQl" +
-      "NcTFpMRUxPT2kYThJMUR9GXFtARF1PQE9PREsDalZMR0dPXlFBV0xITE9PaBdPH0FREktRV0JF" +
+      "NcTFpMRUxCT2kYThJMXB9GXFtASV1PQE9PREsDalZMR0dPXlFBV0xITE9PaBdPH0FREktRV0JF" +
       "UE9NQk9JSwNqW0BFRkJTXEFaTElDTk9lF0ISQVEfRlFWTURdQkBPT0RHAWZWQEhLT15RQVpBRU" +
-      "FCQmgaTx9BUB1HUVtNSVBPTU9CREYDZ1ZNRUZCU1BDVkxFTEJCZRdCH0xRH0tcVkBEXUJMQENE" +
-      "Sw5nVk1IS09eUUxXTEhBT0JoFkATQVwfS1xbQElQT0BCT0lLA2dbTUlJTlNRTFdMSExPT2gXTx" +
-      "JBURJGUVZMOl9DCgMOFRYPfi4VSR1OSkdDVhZJVVhAaV0IE1hQVVRQCDNLUQMbGBUIC15mTzUQ" +
-      "RxRSSF5GQ0kWTlZ8GE5YBlALRxBETEtRDh4JDxRHFx9XClpHMQ0vQ1YfCggJH2kON0pAChNfR1" +
-      "lMHlFbV0BDDgEPflceW0dAUgEDGxtJVVxAaVIeUAVQC0dDVxNLCEMWTltWUgFmDExRVF9cUAYQ" +
-      "TVFNHF1pGE5CDh1FR0hEQkUVEw8LQ11HFWYIQhBHFFJIXlhNEk1WXWcWBVVASBMVQFdCRQANAR" +
-      "hDXVcBZhMcCgJOSlBaVhI2Q04PI1EPWhIdWAsGV1QcURlMVlBUSQ89V1RaGEBSBx9WVQUaAABn" +
-      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNATi5aCVwLF0JHSC4zS1ESDwoERV92GV" +
-      "lMNBUNBBojEQFJVV1ceRhObhEXVAFQT19WDk0VTg8GCEhmT0wuJyk+N09GTUdNG05xBl0dQBoT" +
-      "X0NCQkUAEQ8bDyEETi0bCUlfXlxQCAYGD01WN2kXTxJBURJGUVZNRFBCTU9CREYOZ1ZMR0dPXl" +
-      "FBWkFFQU9CaBpCH0xcH0tcW01FX0NNQkJJRg5nW01FRkJTUUxXTEVMQk9pGE4STFwfRlxWQERd" +
-      "T0BPT0lLDmpWQEhHQFJRTFdMSEFPQmgaTxJBXBJLUVtNSVBDQk5CSUYDaltARUZCU1xBWkxFTE" +
-      "JPZRdOHUBRH0ZcVk1EUEJNT09ERg5qVkBIRk9SXk1XQUhBQkJlGkIfTFwSS1xbTUldT01OTUVG" +
-      "A2dWTUhGT1NRTFdMRUxPT2UXQhJAXhNGXFtASV1PQE9PSUsOalZARUtPXlFNWE1IQU9PaBdPH0" +
-      "FcEktRW01EUEJNQkJFSQ9nW01FS0JTXEFaTEVMQk9lGi8fTFETSVBWQERdQkBPQkRGDmpWQEhL" +
-      "T1NRQVdNR01PQmUaTx9BXB9LUVtNSV1PTUJPSUYPaFdNRUZPU1xMWkxFTE9PaBdPEkxREkZQWU" +
-      "xEXU9AT09JSw5qW0BFS0JeXEFaQUhNQE5oF08SQVESRlFWTURQQk1PQkRGDmdXM0dHCB8dHQdN" +
-      "UTQXTjMWVgBTXhMcUE9fVV9DBwhDXUdJdVcTNklOEgcbAAAFHE5WEE9OSUBICElQDExdQ01MBQ" +
-      "VFXw8mRExHRwMAFwEHTVE0Tgh6FjFMP14TFRMSCxRRWzUXQx9HF3VZTBJHVkVeTR0LSVVOHHgW" +
-      "QBMRHl4RUE9dS1EHHA0GRV8Pd1cTRx5OCFBVRVZHTRVOcQVZHUAbVUdIVx5TUU1MHw0IEQ9+QU" +
-      "JJAx4RFU1OTVxNEUAwFhQTWEEdRwtXVFZGTUwFBUVfDzRATEdHHxwdG1ZVXkNOCjlVCxNYUANH" +
-      "DyhCRRAJCw8KFwpEKgFMUR5OCFBVRVhHTRVOcQVdTE5QRBVQTxVFC0NUXU1FHA9+RBNHRwgfBQ" +
-      "FWVRBNFE5xBV0dQAsTX0NGE0tRBBYFFUVfQzEZAkdHCR4XAh0KGE1WNzAWFBNYQwBJUAxMXUJQ" +
-      "Qk4IA0cXZhBeSRgxXFAcFQkOTVY3MBYUE1hLHUcLV1RSDk0VThlFXxx9WUwSR1ZFDzJYTTQfDR" +
-      "gjeAlfQEgAVEJZTDgABAsIQ11XHzlZFUkLDR0XTU5NLi0pIg4UXxNOUEZHSEddS1EJTFZQXkkP" +
-      "NwUPHAsqEREGGghJVV5AaVMeWAZQCz5QVk1EUEJNT0JERg5nVk1IRk9TUUxXTEhNQE5oGk8fTD" +
-      "cSS1xbQEldT01CT0lLA2dbTUlJTlNcTFpMSExCT2UXTxJBUR9GXFZARF1CTEBDREsOalZARUtP" +
-      "XlxBWkFFQU9CaBpCH0FQHUdRW01JUE9NT0JERg5nVk1IRkJTUUxXTElDTk9lF0IfTFwfRlxbQE" +
-      "ldT0BCT0RLA2pWTEdHT15RTFdMSEFPQmgXTxJBURJLUVtNSVBDQk5CSUsDaltNRUZCXlxBWkFF" +
-      "TEJPZRdCEkBeE0ZRVk1EXUJNT0JERg5nVkBIRk9eUUFXTUdNT0JlGk8fTFwfS1FbQElQT0BCQk" +
-      "lGA2dXQklGQlNRTFdMSExCT2UXQhJBUR9GXFZARFFNTE9PSUsDalZARUtPXlFBWkFIQUJCaBpP" +
-      "E05QEktRVk1JUE9NT0JJRg5nW01IRk9TXExWQ0lMQk9lF0IfTFEfS1xbQEQwT0BCT0lLDmZZTE" +
-      "hLT15RTFdMSEFPT2gaTxJBURJGUVtNRV9DTUJPSUsDZ1tARUtCU1xBWkFFQUJPZRdOHUBREkZR" +
-      "VkBEUEJNT0JERg5nVk1IS09eUU1YTUhBQkJlGkIfTFwfS1xbQEldT0BCQklGD2hXTUhGT1NRTF" +
-      "dMSExPT2gXTxJBURJGUVZMOl9DCgMOFRYPfi4VSR1OSkZDVhZJVV1AaV0IE1hQVVRQCDNLUQMb" +
-      "GBUIC15mTzUQRxRSSF5AQ0kWTlZ6GE5YBlALRxBETEtRDh4JDxRHFx9XClpHMQ0vQ1YfCggJH2" +
-      "kON0pAChNfRVlMHlFbWUBDDgEPflceXUdAUgEDGxtJVVpAaVIeUAVQC0dGVxNLCEMWTltVVAFm" +
-      "DExRVFtcUAYQTVFNHFtpGE5CDh1FR0hCQkUVEw8LQ11HHWYIQhBHFFJIXUVDSRZOVnoYTlgGUA" +
-      "tHAk1MS1ESAgMVRV8VaFcIGQQLUkhNQk0WQxdOMxZWAE5QSEdIRFlLUQgKTltFFRRmWUwYCQME" +
-      "UFVNQ0kJHg0sFlYTW1BMOF5XDQ8WAgUcDg4LWWZPFUkdTkpDWlhNEk1WXXhJQBMXAhNfCVcWRU" +
-      "lQQk4YRV8cOVlMDwobHlBVGhoHA0BOLkwFRUBISkcKV1RSX0MXTltWGAFmEAAOCAUVAU1ONBBN" +
-      "FE5xB0ATG1ALVF5XBwNRW0wJUUUYcGhXHQoDCVJINA9NE01WXXwYTkhASAYYXg5MH1FbXUBDHk" +
-      "cXdUYTNklOLwIOAAcnCgJOcQVZB05QbhYXEApFSVJdETxLR04rGhwPMQkdAgMVGw5NVk4FFFgI" +
-      "oMIRHg8OE0kIHBURGhpFDQFVXlpXrsBSFAkUFkEXETBJF0xADw==";
+      "FCQmUaTx9BUB1HUVtNSVBPTU9CREYDZ1ZNRUZCU1BDVkxFTEJCZRpCH0xRH0tcVkBEXUJMQENE" +
+      "Sw5nVkBIS09eUUxXTEhBT0JoFkATQVwfS1xbQEldT0BCT0lLA2dbTUlJTlNRTFdMSExPT2gXTx" +
+      "JBURJGUVZMOl9DCgMOFRYPfi4VSR1OSkNYWE0STVZdeRhOWAZQC0cWREwaLk1MDhQTEUIqBkxR" +
+      "PhdSCk1OWkdNFU5xDEATCxYTX1AXX0VfQwEcBAkWD34uTA9UTi0PMlhNGw4LCTgWVmoZUElHSE" +
+      "BCRQpDVF9NRQxJZk9MG1VOXFAcGAAfTVZcZxYKQwMVE19QREwaXxpMFENdVB5oVxdJX11BXk0d" +
+      "C0lVThx6FkATER5eEVBPX0tRBxwNBkVfD3xXE0ceTghQVUVeR00VTnEDQBMLFhNfUAVcRV9DHQ" +
+      "AOE0cXdllMDRcNF1BVVlpJEjFAaVcEVAEZQQobGxpFSRpMFENdXAFmDExRVBFcUBoETVEBGQAn" +
+      "GE5VDQVfR0gOTB9RW19bTUUcD35EXRZJThUKBgBNUQEZACcYTlQMF1wMFwZMXSg8Qk4SBgNIZk" +
+      "81NklOLwIOAAcnCgJOcQdeHUAtQgAXEUxdQlATQBpFC0wpEExRRykyNyExT1lNQE48FlYDU14T" +
+      "DVBPX1BfQx0cABALayUWBwUCTkpAQ1YIGQYITnFvThJBURJGUVZNRFBCTU9CREYOZ1ZNSEdAUl" +
+      "FBV0FFQUJCaBpPH0xcH0tcW0BJUENCTkJJRgNnVk1FRkJTXExXTEVMQk9lF04dQFEfS1xWQERd" +
+      "T0BCT0RLA2pWQEgmT1JeTVdMSExPQmgaTx9BXBJLUVtNSVBPTU5NRUYDZ1tARUtCU1xMWkFFTE" +
+      "JPZRdCEkBeE0ZcVkBEUEJNT0JESw5nVkBIS09TUU1YTUhBT0JlGkIfTFwfS1FbQElQT0BCQkVJ" +
+      "D2dbTUhGT1NRTFdMSExCT2gXQhJMURNJUFZASV1PQEJPSUsDalZASEtCXlFBV01HTU9CaBpPEk" +
+      "FcEktRW01JUEJNT0JJRg9oV01FRkJeXExaQUVMQkJlF0IfTFwfRlBZTERdQkBPT0RGDmdWQEhL" +
+      "T15RTFdBSE1ATmgaQh9BXBJLXFtNSVBPQEJCSUsDZ1dCSUZCU1FMWkxFTEJPaBdPEkFRH0ZRVk" +
+      "xLUUJAQk9ESwNqVkBFS0JeXEFaQUVBT05nFk8SQVESRlFWTURQQk1PQkRGDmdWTUk4QFIWABsd" +
+      "GE1WNzAWFBNYQB1HC1dUVkZNTAUFRV8PIERMFjhAUhAaABsEAR9OcW8XExpQC1RDWUweUVtfWE" +
+      "1FDElmT0wJVE5cUAAECgUcTlYQFggAQC9MOF5XHgYUBB1OWzweDzxXVFpJTglQVUFDSQYITnEW" +
+      "HAJAXhMWHhoaRUlSQk4HFQRKZk9MWEcRXAlNDE1RXlVAaU1OC1NHHUcbEUxdURFaTk1FFkErAU" +
+      "xRUUBSFB0VCElVTltpSUBKQAoTX0tZTB5RW19AQw4BD35XHl5HQFIBAxsbSVVZQGlSHlAFUAtH" +
+      "QFcTOl9DDQQEBA5dKxwAH0dWC1AXVlVaVkBOMhZWAh9eExACV1QcURlMVlBLR1RmT18WSU4UHR" +
+      "gaTVEUThRpDl8dQAsTX0NAE0tRBBYFFUVfQzEZAkdHCR4XAh0KGE1WNzAWFBNYRR1HC1dUVkZN" +
+      "TAUFRV8PIUVMFjhAUgEOEgpJVTcXaUxOC1NHHUcLV1ReDk0VThlFXxhoVxdJX18NL0NWMBsOGA" +
+      "QHUQITWEcHSVAqHQIWBUxWU1UYAT9XAAoICVJITTEtLiEpTHgWQBMVUAtXQVlMD1FbX1VNRRZd" +
+      "JQIALQQPGRwIVlVZQ04LOV0IE1gpE0ZRVk1EUEJNT0JERg5nVk1IRk9TUUxXTUdNT0JoGkIfQV" +
+      "wfS1xbQElQT0AvT0lGA2dXQklGQlNcTFdMRUxCT2gXTxJMUR9GXFZARFFNTE9PREsOaltASEtC" +
+      "XlxBWkFFQU9CZRpPE05QEktRW01JUEJNT0JERg5nW01FRkJTXExWQ0lMQk9lGkIfTFwfS1xbQE" +
+      "ldT0BCT0lLDmZZTEhLT1NRQVdBSEFPT2gXTxJBXBJLUVtNRV9DTUJPSUsDZ1tNRUtCXlxBWkxF" +
+      "TEJPZRdOHUBREkZRVkBEUEJNT0JERg5qVk1IS09eUU1YTUhBQkJoGkIfTFwSS1xbTUldT01CQk" +
+      "lGD2hXTUVGT1NRTFdMRUxCT2UXTxJMUR9GXFZMS1FCQEJPSUsOaltASEtPXlxBV0FFQU9CaBZA" +
+      "E0FcEkZRW01JUEJNQkJJRgNnVk1IRkJTUENWTEVMQk9lGkISTFwfS1xWQEldT0BCT0RHAWZWQE" +
+      "hLT15RTFdBSExPQmgXTxJBURJLUVdCRVBPQEJPSUZoaltARUZCXlxBWkFFQUJPaRhOEkFRH0Zc" +
+      "Vk1EUEJNT0JERg5qVkBIS09SXk1XQUVBQkJlGkIfTFwfS1xbQEldT01CQkVJD2dWTUhGT1NRTF" +
+      "dMSExPT2gXTxJBURJGUChCRRcOAR4SRV92P1cWSV9UXFAWVlVaWkBOIlBOC0AWAEcPKEJFERQa" +
+      "GA4JFg9+LhVJHU5KRkNWFklVVUBpXQgTWFBTVFBZTAgDBAAfQ10+DyBETDYYMVxQHxUIDhxOVh" +
+      "BPTklASABUXlcXRUlQW0BDDgEPflceXUdAUgEDGxtJVVpAaVIeUAVQC0dGVxNLCEMWTltVVAFm" +
+      "DExRVEBSGwtWVUkfW05nFh9dDQYTX0VZTAEBAAlOW0VVDzlZFUkdTkpDQ1YWSVVdQGldCBNYUE" +
+      "FdUFlMFB8OGk5bX0kPIgcPDEdWUkRNCUMQTRROcQZdHUALE19DQkJFGgVMVkMXXA9oVx0HChhS" +
+      "SFZYTQ0dDQtpDk4IQA9sSVAWBgIQCh4DCAkRD34OTBNHVkFFQ1YWSVVdEWcWGUFASEpHCldUVl" +
+      "9DF05bVhgBZhEBHAtOShwaGANHTQkUIkBOCxlQSUdIQkJFCkNUXVQaSQ8hGwsGDAkDUFUvFEkX" +
+      "TlZyGE5IQEgAUF5XBwNRW0wJUUUYcGhXHQoDCVJINA9NE01WXWcWFRNYQwYYXg5MH1FbX19NRR" +
+      "wPfkQTNklOLwIOAAcnCgJOcQFaHUAtQgAXEUxdQFITMU1FBkIrBwo/AAEAHg4ACklVTiJrAFXz" +
+      "0lJKGAkIQBwOGhMXHEdFaGRFX1mn3FAJEg8SRRQRFzZPERMf";
 
     function decodeLevel(b64, key){
       var enc = new TextEncoder(), dec = new TextDecoder();
@@ -420,6 +421,8 @@
     var floorOpened = [], floorPressed = [], floorSeen = [];
     for(var fi=0; fi<FLOOR_COUNT; fi++){ floorOpened[fi]={}; floorPressed[fi]={}; floorSeen[fi]={}; }
     var lastCheckpoint = null;          // {floor,x,y,facing}
+    var deaths = {};                    // per-floor death count (in session)
+    var floorDisarmed = {};             // floors where the V-TGM has been shut down (mercy)
 
     var DIRS = [{dx:0,dy:-1},{dx:1,dy:0},{dx:0,dy:1},{dx:-1,dy:0}]; // N,E,S,W
 
@@ -457,6 +460,36 @@
     scene.add(playerLight);
 
     function cw(x){ return x*CELL; } // cell -> world coordinate
+
+    // Procedural dark-concrete textures (one-time; tagged _keep so they survive
+    // a floor swap). Material colour stays white so the map provides the look,
+    // keeping the walls as dark as before but with grime, panel seams + rust.
+    function makeConcreteTexture(base, opts){
+      opts=opts||{};
+      var c=document.createElement("canvas"); c.width=c.height=128; var g=c.getContext("2d");
+      g.fillStyle=base; g.fillRect(0,0,128,128);
+      for(var i=0;i<1100;i++){ var v=(Math.random()*36-16)|0, a=(0.04+Math.random()*0.09);
+        g.fillStyle="rgba("+(70+v)+","+(74+v)+","+(82+v)+","+a.toFixed(3)+")";
+        g.fillRect(Math.random()*128|0, Math.random()*128|0, 1, 1); }
+      for(var j=0;j<9;j++){ var x=Math.random()*128, y=Math.random()*128, r=8+Math.random()*22;
+        var grd=g.createRadialGradient(x,y,0,x,y,r);
+        grd.addColorStop(0,"rgba(0,0,0,0.20)"); grd.addColorStop(1,"rgba(0,0,0,0)");
+        g.fillStyle=grd; g.fillRect(x-r,y-r,r*2,r*2); }
+      if(opts.seams){
+        g.strokeStyle="rgba(0,0,0,0.40)"; g.lineWidth=2; g.strokeRect(1,1,126,126);
+        g.beginPath(); g.moveTo(64,0); g.lineTo(64,128); g.moveTo(0,64); g.lineTo(128,64); g.stroke();
+        g.strokeStyle="rgba(150,160,175,0.05)"; g.lineWidth=1;
+        g.beginPath(); g.moveTo(63,0); g.lineTo(63,128); g.moveTo(0,63); g.lineTo(128,63); g.stroke();
+        g.fillStyle="rgba(150,160,175,0.10)";
+        [[10,10],[118,10],[10,118],[118,118]].forEach(function(p){ g.beginPath(); g.arc(p[0],p[1],2.2,0,6.28); g.fill(); });
+      }
+      if(opts.rust){ for(var k=0;k<6;k++){ var rx=Math.random()*128, ry=Math.random()*128;
+        g.fillStyle="rgba(96,52,30,"+(0.04+Math.random()*0.07).toFixed(3)+")";
+        g.fillRect(rx, ry, 1+Math.random()*2, 16+Math.random()*46); } }
+      var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; t._keep=true; return t;
+    }
+    var wallTex  = makeConcreteTexture("#15171b", {seams:true, rust:true});
+    var floorTex = makeConcreteTexture("#101216", {seams:true});
 
     function makePageTexture(num){
       var c=document.createElement("canvas"); c.width=256; c.height=320;
@@ -546,7 +579,7 @@
       g.traverse(function(o){
         if(o.geometry) o.geometry.dispose();
         if(o.material){ var m=o.material;
-          if(m.map) m.map.dispose(); if(m.emissiveMap) m.emissiveMap.dispose(); m.dispose(); }
+          if(m.map && !m.map._keep) m.map.dispose(); if(m.emissiveMap && !m.emissiveMap._keep) m.emissiveMap.dispose(); m.dispose(); }
       });
     }
 
@@ -576,10 +609,11 @@
         }
       });
 
-      // materials (per-floor so disposeGroup can free them cleanly)
-      var matFloor = new THREE.MeshStandardMaterial({ color:0x14171b, roughness:0.96, metalness:0.05 });
+      // materials (per-floor; shared concrete textures stay dark via white tint)
+      floorTex.repeat.set(W, H);
+      var matFloor = new THREE.MeshStandardMaterial({ color:0xffffff, map:floorTex, roughness:0.96, metalness:0.05 });
       var matCeil  = new THREE.MeshStandardMaterial({ color:0x0e1014, roughness:1.0,  metalness:0.0  });
-      var matWall  = new THREE.MeshStandardMaterial({ color:0x141619, roughness:0.94, metalness:0.04 });
+      var matWall  = new THREE.MeshStandardMaterial({ color:0xffffff, map:wallTex, roughness:0.94, metalness:0.06 });
 
       var planeGeo = new THREE.PlaneGeometry(W*CELL, H*CELL);
       var fl = new THREE.Mesh(planeGeo, matFloor); fl.rotation.x=-Math.PI/2;
@@ -647,7 +681,7 @@
       if(upCell){ var lu=makeLadder("up"); lu.position.set(cw(upCell.x),0,cw(upCell.y)); floorRoot.add(lu); }
 
       // V-TGM hunters (reset to their spawn cells each time the floor loads)
-      enemies = (F.enemies||[]).map(function(en){
+      enemies = (floorDisarmed[idx] ? [] : (F.enemies||[])).map(function(en){
         var v=makeVTGM(); v.group.position.set(cw(en.x),0,cw(en.y)); floorRoot.add(v.group);
         return { cx:en.x, cy:en.y, wx:cw(en.x), wz:cw(en.y), tx:en.x, ty:en.y,
                  moving:false, t:0, dur:ENEMY_STEP, state:"patrol", lose:0,
@@ -1061,6 +1095,9 @@
     }
     function caught(){
       if(invuln>0 || transitioning || !running) return;
+      var df=curFloor;
+      deaths[df]=(deaths[df]||0)+1;
+      if(deaths[df]>=MERCY_DEATHS && !floorDisarmed[df]) floorDisarmed[df]=true;
       transitioning=true; anim=null; inputBuffer=null;
       pulseVignette();
       var cp = lastCheckpoint || { floor:0, x:player.cx, y:player.cy, facing:player.facing };
@@ -1068,6 +1105,7 @@
       fadeEl.style.opacity="1";
       setTimeout(function(){
         loadFloor(cp.floor, {x:cp.x, y:cp.y}, cp.facing);
+        if(floorDisarmed[df]) toast("Notabschaltung: die V-TGM auf Ebene "+(df+1)+" ist deaktiviert.","good",3600);
         invuln=RESPAWN_GRACE; saveGame();
         fadeEl.style.opacity="0";
         setTimeout(function(){ transitioning=false; }, 360);
