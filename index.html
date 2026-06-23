@@ -117,7 +117,7 @@
   #flash{ position:fixed; inset:0; background:#dfe9ff; opacity:0; pointer-events:none; z-index:8; }
   #vignette{ position:fixed; inset:0; pointer-events:none; z-index:9; opacity:0;
     box-shadow:inset 0 0 120px 30px var(--red); transition:opacity .12s; }
-  #fade{ position:fixed; inset:0; background:#050607; opacity:0; pointer-events:none; z-index:15;
+  #fade{ position:fixed; inset:0; background:#050607; opacity:0; pointer-events:none; z-index:25;
     transition:opacity .35s ease; }
 
   /* full-screen overlays (start / success) */
@@ -357,42 +357,43 @@
       "lMHlFbV0BDDgEPflceW0dAUgEDGxtJVVxAaVIeUAVQC0dDVxNLCEMWTltWUgFmDExRVF9cUAYQ" +
       "TVFNHF1pGE5CDh1FR0hEQkUVEw8LQ11HFWYIQhBHFFJIXlhNEk1WXWcWBVVASBMVQFdCRQANAR" +
       "hDXVcBZhMcCgJOSlBaVhI2Q04PI1EPWhIdWAsGV1QcURlMVlBUSQ89V1RaGEBSBx9WVQUaAABn" +
-      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNATi5aCVwLF0JHSC4zS1E+Hg0VDylIKl" +
-      "dUWlVeXFAwBwoOC05WegURHRlQXwQfEExdUSQsKS8iRR9mWUwcR1ZCQ0NWB0lVXVtnFh9BAwVf" +
-      "IxMWBwkUQ1ReTUUCXy0RTFE+TlNRTFdMSExPT2gXTxJBURJGUVZNRFFNTE9PREsDaltASEtPXl" +
-      "xBWkFFQUJCaBZAE0FcEktRVk1JUE9NQkJERg5nW01FRk5cUExaQUVMQk9lF0IfTFEfS1xWQERd" +
-      "QkxAQ0RGDmdWQEhLT15RTFdBSEFPQmgaTxNOUBJLUVtASV1PTUJCSUsDZ1tNRUZCU1BDVkxFTE" +
-      "JPaBdPEkFRH0ZRVkBEXUJNT0NLRw5qVkBFS0JeXEFaQUhBQkJoGkIfQVAdR1FbTURQQk1PQkRG" +
-      "DmdbTUhGQlNcTFZDSUxCQmUaQh9MUR9LXFZARF1PQE9PREcBZlZASEZPU1FBV0FIQU9CaBdPEk" +
-      "FcEkdeV01JUE9AQkJJSwNnW01FRkJeMUFaTElDTk9lF0ISTFESRlFWQERdQkBPQkRLDmZZTEhL" +
-      "Ql5RQVdBRUFPQmgaQh9BXB9LUVdCRVBPTU9CSUYDZ1tNSEZPU1FMWkxITE5AaRdCH0xRH0tcVk" +
-      "BJXU9AQk9JSwNqVkxHR09TUUxXTEhMT09oF08SQVESRlFWTUUuTUwIDggXXmZPNRBHFFJIXkVD" +
-      "SRZOVnoGQBMLFhNfUBFfRQ48Qk4DEhFZKxsdSV83C1AXVlVSQ04VaQ5cHUAbVUdIVwxWUU1MAx" +
-      "ECC15mTzVJAV1SLxIpQ0kfDQsuR04LOQkTHVBPX0tRGExWVEtHRCBXVEkVX1JeTQcDBBtOVngY" +
-      "TlcQE1ZHSFddRQ5NFU4ZRV8cfVlMEkdWQUdDVgYPTVZOOwBOHUABXQoGV1RTX0MIHgAARxdmQk" +
-      "wWSRdSCk1OXEdNFU5xBVkdQBtVR0hXHlJRTUwfDQgRD35AQkkDHhEVTU5NWU0RMWcWD1kHEVoV" +
-      "HRwAE1FbFU4ZRV8cc1lMEkdWQUMSWE0eH05WMBYUE1hDHUcLV1RWDk1MCA4QCw9+DkwTR1ZBQ0" +
-      "NWFklVXV82GE5UGhtFR0gbGwsfTUwJDwIIRCEGTFE+F1IKTU5eWkNOFWkOXQBOUFgBUE9MAkND" +
-      "EzFNRTpdJQEGJwACUkheRV9HTTMfLlEIE1hAAxheDkwJEgwLTltFIG8BOytLVk5cUBhWVVlcQE" +
-      "4jFlYAW14TFgIUGQk1AA0FDwBHF3ZZTAwXBRRQVS9NSExPT2gXTxJBURJGUVZNRFBCTU9CREYP" +
-      "aFdNRUZCXjdMWkFFQUJCZRdCH0xcH0ZcVkxLUUJAT09ERg5qVkBIRk9TUUFXQUhBT0JoFkATQV" +
-      "wSS1FbQElQT0BCT0lLA2dbTUVLQlNQQ1ZMRUxCT2UXTxJBURJGUVZNRF1CTU9CREcBZlZASEtC" +
-      "XlxBV0FFQUJCZRpCH0FcH0tRV0JFUE9NT0JERgNnW01IRk9TUUxaTEVMQk9pGE4STFwfS1xWQE" +
-      "RdT0BCT0lLDmpWQEhLT1JeTVdMSExPQmgXTxJBURJGUVtNRFBPTUJCRUkPZ1tARUZCXlxBWkxF" +
-      "QUJPZRpCEkxRH0ZQWUxEXUJNT0JERg5qVkBIS09TUUFXQUhBT05nFk8fTFwfS1FbQElQT01CT0" +
-      "lGA2pbTUVGTlxQTFpMSExCT2UXTxJMURJGXFZNRFBCQE9DS0cOalZASEtCXlFBWkFFQU8vZRpC" +
-      "H0xcEkdeV01JUE9NT0JERgNnVk1FRk9TUUxXTEVMTkBpF0IfTFwfRlxbQEldQkBCT0lLA2pWQE" +
-      "hHQFJRTFdMSEFPT2gXTxJBURJGUVZNSVBPTU5NRUYDaltARUtCXlxBWkFFQUJCZRpCEkxRE0lQ" +
-      "Vk1EUEJNT0JERg5nVk1IRk9TUUxXTEhNMUBpUANeEAETXykOTB9RW1pAQx5HF3VZTAIBTkpQC0" +
-      "VNFjJATilBGEUNHEJHSC4VRQtDVF1VS0dUZk9fR0cFFFBVVg1aTUBOJEQJXxFQCz5QEV9FLhwz" +
-      "QEMXBEohBkxRPhdSCk1OWEdNFU5xA0ATCxYTX1AFWEVfQx0ADhNHF3JZTA0XDRdQVVZbSRJAF2" +
-      "lMTgtQQx1HC1dUVkRNTAUFRV8PNEJMR0cfHB0bVlVcQ04KOVULE1hQAUcPWRVFC0NUXlBLR1Rm" +
-      "T19HRwUUUFVWH1NNQE44WANFQEgJSVATHAYUQ1ROV0UYAT9XFklfXVxQFlZVWlhATiJQTgtAAg" +
-      "hHXlcdCxwVTFZYS0dLNhQJSV9OSVASKUNJDAQJKF8cXgscRUdIDkwfUVtfWU1FHA9+RF0WSU4F" +
-      "Ak1OFEkXTlZ6GE5IQEgAGF5XCggED0xWDxIJQWhXCxMMGFJIFFYXSVVZQGlNTgtTDx1HFxsLCh" +
-      "oEHU5bPB4PPFdUWElOCVBVRUNJBghOcRYJAUAPbElQKh4GBwkiCQ9FXxxxQ0JJOh8VFwtWVVhc" +
-      "ETFnFg9eDQBVMRcYHgsSFQtOW0UrDXBMrNtFFw0JEloUFhQRFzYUTHRCQgBXsMVOHA4aE0IaGh" +
-      "5QPwhMFg==";
+      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNATi5aCVwLF0JHSC4zS1ESDwoERV92GV" +
+      "lMNBUNBBojEQFJVV1ceRhObhEXVAFQT19WDk0VTg8GCEhmT0wuJyk+N09GTUdNG05xBl0dQBoT" +
+      "X0NCQkUAEQ8bDyEETi0bCUlfXlxQCAYGD01WN2kXTxJBURJGUVZNRFBCTU9CREYOZ1ZMR0dPXl" +
+      "FBWkFFQU9CaBpCH0xcH0tcW01FX0NNQkJJRg5nW01FRkJTUUxXTEVMQk9pGE4STFwfRlxWQERd" +
+      "T0BPT0lLDmpWQEhHQFJRTFdMSEFPQmgaTxJBXBJLUVtNSVBDQk5CSUYDaltARUZCU1xBWkxFTE" +
+      "JPZRdOHUBRH0ZcVk1EUEJNT09ERg5qVkBIRk9SXk1XQUhBQkJlGkIfTFwSS1xbTUldT01OTUVG" +
+      "A2dWTUhGT1NRTFdMRUxPT2UXQhJAXhNGXFtASV1PQE9PSUsOalZARUtPXlFNWE1IQU9PaBdPH0" +
+      "FcEktRW01EUEJNQkJFSQ9nW01FS0JTXEFaTEVMQk9lGi8fTFETSVBWQERdQkBPQkRGDmpWQEhL" +
+      "T1NRQVdNR01PQmUaTx9BXB9LUVtNSV1PTUJPSUYPaFdNRUZPU1xMWkxFTE9PaBdPEkxREkZQWU" +
+      "xEXU9AT09JSw5qW0BFS0JeXEFaQUhNQE5oF08SQVESRlFWTURQQk1PQkRGDmdXM0dHCB8dHQdN" +
+      "UTQXTjMWVgBTXhMcUE9fVV9DBwhDXUdJdVcTNklOEgcbAAAFHE5WEE9OSUBICElQDExdQ01MBQ" +
+      "VFXw8mRExHRwMAFwEHTVE0Tgh6FjFMP14TFRMSCxRRWzUXQx9HF3VZTBJHVkVeTR0LSVVOHHgW" +
+      "QBMRHl4RUE9dS1EHHA0GRV8Pd1cTRx5OCFBVRVZHTRVOcQVZHUAbVUdIVx5TUU1MHw0IEQ9+QU" +
+      "JJAx4RFU1OTVxNEUAwFhQTWEEdRwtXVFZGTUwFBUVfDzRATEdHHxwdG1ZVXkNOCjlVCxNYUANH" +
+      "DyhCRRAJCw8KFwpEKgFMUR5OCFBVRVhHTRVOcQVdTE5QRBVQTxVFC0NUXU1FHA9+RBNHRwgfBQ" +
+      "FWVRBNFE5xBV0dQAsTX0NGE0tRBBYFFUVfQzEZAkdHCR4XAh0KGE1WNzAWFBNYQwBJUAxMXUJQ" +
+      "Qk4IA0cXZhBeSRgxXFAcFQkOTVY3MBYUE1hDAElQDExdShxCF0MfRxd1WUwSR1ZBRxIpQ0kwHA" +
+      "0/XCBUDFALVENFQkUsEgsJBUVfH3YIQhBHAhEfClZVSSouKQVxTAJAXhMSUE9cVF9DBk5bVlwB" +
+      "ZgYeChICNhMMHQEMTVZeZxYLQwsWE18pV01EUEJNT0JERg5nVk1IRk9TUUxXTEhMTkBpF0ISTF" +
+      "x0RlxbQEldT0BPT0lLA2pWQEhHQFJRQVdBSExPQmgaTxJBURJLUVtNSVBPTU5NRUYDZ1tNRUtC" +
+      "U1xBWkFFQUJPZRdCH0xRE0lQVkBEXUJAT0JERg5nVk1IRk9eUUxXTEhNQE5oGk8fTFwfS1FbQE" +
+      "ldT0BCT0lGA2pbTUlJTlNcTFdMSExCT2UXTxJBURJGXFZARF1CTEBDREsDaltASEtPXlxBWkFF" +
+      "QU9CaBpPH0FQHUdRVk1EUE9NT0JERg5nVk1FRk9TXExaTElDTk9lGkISTFwfS1xWQEldQkBCT0" +
+      "RLDmpWTEdHT15RTFdMSExPQmgaTx9BURJLUVtNSVBDQk5CSUsDaltNRUtCU1xMWkFFTEJCZRdC" +
+      "EkBeE0ZcVk1EXUJAT0JESw5nVkBIRk9TUUFXTUdNT0JoGk8fTFwSS1xbQElQIkBCT0lLA2dXQk" +
+      "lGQlNcTFdMSExCT2gXQhJBURJGUVZARFFNTE9PSUsDalZARUtCXlFBWkFFQUJCaBpPE05QEkZR" +
+      "Vk1JUEJNT0JERg5nVk1IRkJTXExWQ0lMQkJlGkIfTFwfS1xbQEldT0BCT0RLDmZZTEhGT1NRTF" +
+      "dMSExPT2gXTxJBURJGUVZNRS5NTAgOCBdeZk81EEcUUkhbWE0STVZdZxYFVUBIEwFDVxM6X0MM" +
+      "GRUTCkM3V1QwHk4IUFVFW0dNFU5xBUATCxYTX1AXX0VfQwEcBAkWD34uTA9UTi0PMlhNGw4LCT" +
+      "gWVmoZUElHSEJCRQpDVFtNRQxJZk9MG1NOXFAcGAAfTVZaZxYKQwMVE19QQUwaXxpMFENdVxxo" +
+      "VxdJX11HXk0dC0lVThx8FkATER5eEVBPWUtRBxwNBkVfD3RXE0ceTghQVUZeR00VTnEFQBMLFh" +
+      "NfUAVWRV9DHQAOE0cXfFlMDRcNF1BVVllJEkAXaUxOC1NeExxQT19QX0MHCENdR119V0JJFgAf" +
+      "Bk1OVkdNCh4qU04LQEsTGC9ZTAQbBA0HEQgMQzBXVBBHFFJIXkFDSRZOVnoHER1AB0FHSA5MH1" +
+      "FbX0BDHkcXdQhCSQEDBxxNTgEeAwBAaVEUWBZQCx5QDUxdRk1MFUNdVFBoVwsFAAEZFxxWVTAU" +
+      "ThRpDl8dQAsTX0NZTA4XQ1ROBFdHUBlZTBgEChVQVS8USRdOVngYTkhASAIYXg5MH1FbXF1NRR" +
+      "wPfkRbFjhAUi0fFRsDIwkCaQ5dBFReEzoBEAsDUVtdXxw6SQ8nGgEZATgVHx8YDh8KTlZpekwF" +
+      "W7CBRQkIFRpdGhMXHBwYDWQwTltUXrLCTw8SEBJCFzZPEUofUEw=";
 
     function decodeLevel(b64, key){
       var enc = new TextEncoder(), dec = new TextDecoder();
@@ -529,6 +530,8 @@
     var enemies = [];    // V-TGM hunters on the current floor
     var invuln = 0;      // post-respawn grace timer (seconds)
     var huntActive = false; // any enemy currently hunting (for ambience/telegraph)
+    var safeCells = [];     // V-TGM-proof refuges on the current floor
+    function isSafe(x,y){ for(var i=0;i<safeCells.length;i++) if(safeCells[i].x===x&&safeCells[i].y===y) return true; return false; }
 
     function isWall(x,y){ return x<0||y<0||x>=W||y>=H || grid[y][x]==='#'; }
     function doorAt(x,y){ for(var i=0;i<doors.length;i++) if(doors[i].x===x&&doors[i].y===y) return doors[i]; return null; }
@@ -651,6 +654,19 @@
                  lastSeen:null, prev:null, model:v }; });
       huntActive=false;
 
+      // safe refuges: the V-TGM won't enter them, and you can't be caught while
+      // standing on one (she lurks at the edge, loses you, and wanders off).
+      safeCells = (F.safe||[]).map(function(s){ return {x:s.x,y:s.y}; });
+      safeCells.forEach(function(s){
+        var disc=new THREE.Mesh(new THREE.CircleGeometry(CELL*0.34,28),
+          new THREE.MeshStandardMaterial({ color:0x0c2a22, emissive:0x7effd0, emissiveIntensity:0.7, transparent:true, opacity:0.92 }));
+        disc.rotation.x=-Math.PI/2; disc.position.set(cw(s.x),0.04,cw(s.y)); floorRoot.add(disc);
+        var ring=new THREE.Mesh(new THREE.TorusGeometry(CELL*0.36,0.04,8,28),
+          new THREE.MeshStandardMaterial({ color:0x0c2a22, emissive:0x7effd0, emissiveIntensity:0.9 }));
+        ring.rotation.x=Math.PI/2; ring.position.set(cw(s.x),0.07,cw(s.y)); floorRoot.add(ring);
+        var lp=new THREE.PointLight(0x7effd0,0.45,CELL*2.2,2); lp.position.set(cw(s.x),1.1,cw(s.y)); floorRoot.add(lp);
+      });
+
       // place player
       player.cx=pos.x; player.cy=pos.y; player.facing=facing;
       cam.x=cw(pos.x); cam.z=cw(pos.y); cam.yaw=yawFor(facing);
@@ -680,7 +696,7 @@
       var v=DIRS[player.facing];
       var nx=player.cx+v.dx*d, ny=player.cy+v.dy*d;
       if(isBlocked(nx,ny)){ bump(); return; }
-      player.cx=nx; player.cy=ny;
+      player.cx=nx; player.cy=ny; playSfx("step");
       anim={ t:0,dur:MOVE_DURATION,
         from:{x:cam.x,z:cam.z,yaw:cam.yaw}, to:{x:cw(nx),z:cw(ny),yaw:cam.yaw},
         onArrive:function(){ onEnterCell(nx,ny); } };
@@ -702,7 +718,7 @@
     function onEnterCell(x,y){
       if(checkpoint && x===checkpoint.x && y===checkpoint.y){
         lastCheckpoint={floor:curFloor,x:x,y:y,facing:player.facing};
-        saveGame(); toast("Kontrollpunkt gesichert · Ebene "+(curFloor+1),"good");
+        saveGame(); toast("Kontrollpunkt gesichert · Ebene "+(curFloor+1),"good"); playSfx("checkpoint");
       }
       var p=pageAt(x,y); if(p) collectPage(p);
       if(downCell && x===downCell.x && y===downCell.y){ changeFloor(curFloor+1, FLOORS[curFloor+1].up, player.facing, "hinab"); return; }
@@ -711,7 +727,7 @@
     }
 
     function collectPage(p){
-      p.collected=true; collected["f"+curFloor+"_"+p.id]=true;
+      p.collected=true; collected["f"+curFloor+"_"+p.id]=true; playSfx("page");
       var mesh=p.mesh, t=0;
       if(mesh) fx.push(function(dt){ t+=dt; var k=Math.min(t/0.4,1);
         mesh.scale.setScalar(1+0.6*k); mesh.material.opacity=0.85*(1-k); mesh.position.y=1.45+0.6*k;
@@ -722,14 +738,14 @@
 
     function pressButton(b){
       if(b.pressed){ toast("Schalter bereits aktiviert","warn"); return; }
-      b.pressed=true; floorPressed[curFloor][b.id]=true;
+      b.pressed=true; floorPressed[curFloor][b.id]=true; playSfx("button");
       if(b.mesh) b.mesh.material.emissive.setHex(0x62ff9c);
       b.opens.forEach(function(id){ var d=doorById(id); if(d) openDoor(d); });
       saveGame();
       toast("KLACK — irgendwo öffnet sich eine Tür","good");
     }
     function openDoor(d){
-      if(d.open) return; d.open=true; floorOpened[curFloor][d.id]=true;
+      if(d.open) return; d.open=true; floorOpened[curFloor][d.id]=true; playSfx("door");
       if(d.mesh) d.mesh.material.emissive.setHex(0x143a20);
     }
 
@@ -745,7 +761,7 @@
     var fadeEl=document.getElementById("fade");
     function changeFloor(idx, pos, facing, word){
       if(transitioning) return;
-      transitioning=true; anim=null; inputBuffer=null;
+      transitioning=true; anim=null; inputBuffer=null; playSfx("ladder");
       fadeEl.style.opacity="1";
       setTimeout(function(){
         loadFloor(idx, pos, facing);
@@ -757,7 +773,7 @@
     }
 
     function bump(){
-      pulseVignette();
+      pulseVignette(); playSfx("bump");
       if(!reducedMotion){
         var v=DIRS[player.facing], t=0;
         fx.push(function(dt){ t+=dt; var k=Math.sin(Math.min(t/0.12,1)*Math.PI)*0.08;
@@ -806,7 +822,7 @@
       var beat=Math.floor(elapsed/BEAT);
       if(beat>lastBeatIndex){
         for(var b=lastBeatIndex+1;b<=beat;b++){
-          if(b>0 && b % FLASH_INTERVAL_BEATS === 0){ lastFlashStart=b*BEAT; if(!transitioning) doFlashReveal(); }
+          if(b>0 && b % FLASH_INTERVAL_BEATS === 0){ lastFlashStart=b*BEAT; if(!transitioning) doFlashReveal(); playSfx("thunder"); }
         }
         lastBeatIndex=beat;
       }
@@ -848,6 +864,7 @@
         if(exitCell && cx===exitCell.x && cy===exitCell.y) mark="#62ff9c";
         if(checkpoint && cx===checkpoint.x && cy===checkpoint.y) mark="#5fa8ff";
         var pg=pageAt(cx,cy); if(pg) mark="#62ff9c";
+        if(isSafe(cx,cy)) mark="#7effd0";
         var bright = (flashSeenNow && flashSeenNow[k]) ? (0.55+0.45*flv) : 0.55;
         mmx.globalAlpha=bright; mmx.fillStyle=col; mmx.fillRect(sx,sy,cs,cs);
         if(mark){ mmx.globalAlpha=Math.min(1,bright+0.25); mmx.fillStyle=mark; mmx.fillRect(sx+1,sy+1,cs-2,cs-2); }
@@ -937,7 +954,7 @@
       var i=0; return coordTemplate.replace(/\{\}/g, function(){ return fr[i++]!==undefined?fr[i-1]:"X"; });
     }
     function showSuccess(){
-      running=false;
+      running=false; playSfx("win");
       document.getElementById("finalCoords").textContent=assembleCoords();
       document.getElementById("successScreen").classList.remove("hidden");
       clearSave();
@@ -955,7 +972,7 @@
         var c=q[head++];
         for(var i=0;i<DIRS.length;i++){
           var nx=c.x+DIRS[i].dx, ny=c.y+DIRS[i].dy, k=key(nx,ny);
-          if(seenb[k]||isBlocked(nx,ny)) continue;
+          if(seenb[k]||isBlocked(nx,ny)||isSafe(nx,ny)) continue;
           seenb[k]=true; prev[k]={x:c.x,y:c.y};
           if(nx===tx&&ny===ty){
             var path=[{x:nx,y:ny}], cur=k;
@@ -970,11 +987,11 @@
     function randomStep(e){
       var opts=[], i;
       for(i=0;i<DIRS.length;i++){ var nx=e.cx+DIRS[i].dx, ny=e.cy+DIRS[i].dy;
-        if(isBlocked(nx,ny)) continue;
+        if(isBlocked(nx,ny)||isSafe(nx,ny)) continue;
         if(e.prev && nx===e.prev.x && ny===e.prev.y) continue; // avoid immediate backtrack
         opts.push({x:nx,y:ny}); }
       if(!opts.length){ for(i=0;i<DIRS.length;i++){ var ax=e.cx+DIRS[i].dx, ay=e.cy+DIRS[i].dy;
-        if(!isBlocked(ax,ay)) opts.push({x:ax,y:ay}); } }
+        if(!isBlocked(ax,ay)&&!isSafe(ax,ay)) opts.push({x:ax,y:ay}); } }
       if(!opts.length) return {x:e.cx,y:e.cy};
       return opts[(Math.random()*opts.length)|0];
     }
@@ -1006,7 +1023,7 @@
     }
     function updateEnemies(dt){
       if(invuln>0) invuln-=dt;
-      huntActive=false;
+      huntActive=false; var nearest=Infinity;
       for(var i=0;i<enemies.length;i++){
         var e=enemies[i];
         if(e.moving){
@@ -1023,20 +1040,24 @@
         g.position.set(e.wx+jit, bob, e.wz+jit);
         var dx=cam.x-e.wx, dz=cam.z-e.wz;
         g.rotation.y=Math.atan2(dx,dz);
+        var ed2=dx*dx+dz*dz; if(ed2<nearest) nearest=ed2;
         var pulse=e.state==="hunt"?0.6*Math.abs(Math.sin(elapsed*9)):0.25*Math.abs(Math.sin(elapsed*2.5));
         e.model.eyeMat.emissiveIntensity=(e.state==="hunt"?2.2:1.1)+pulse;
         e.model.eyeLight.intensity=(e.state==="hunt"?1.5:0.8)+pulse*0.5;
 
-        if(invuln<=0){ var cdx=cam.x-e.wx, cdz=cam.z-e.wz, R=CELL*ENEMY_CATCH_DIST;
+        if(invuln<=0 && !isSafe(player.cx,player.cy)){ var cdx=cam.x-e.wx, cdz=cam.z-e.wz, R=CELL*ENEMY_CATCH_DIST;
           if(cdx*cdx+cdz*cdz < R*R){ caught(); return; } }
       }
+      if(soundOn){ var hum=getSfx("hum"); if(hum&&!hum._missing){
+        var nd=Math.sqrt(nearest); var tt=isFinite(nd)?Math.max(0,1-nd/(CELL*7)):0;
+        hum.volume=(huntActive?0.5:0.32)*tt; } }
     }
     function caught(){
       if(invuln>0 || transitioning || !running) return;
       transitioning=true; anim=null; inputBuffer=null;
       pulseVignette();
       var cp = lastCheckpoint || { floor:0, x:player.cx, y:player.cy, facing:player.facing };
-      toast("ERFASST — zurück zum Kontrollpunkt","bad",2600);
+      toast("ERFASST — zurück zum Kontrollpunkt","bad",2600); playSfx("caught");
       fadeEl.style.opacity="1";
       setTimeout(function(){
         loadFloor(cp.floor, {x:cp.x, y:cp.y}, cp.facing);
@@ -1081,20 +1102,48 @@
     /* =========================================================================
        AUDIO (optional, NOT required for timing - clock is independent)
        ========================================================================= */
-    var audio=null, soundOn=false, audioOk=false;
+    var soundOn=false;
     var soundBtn=document.getElementById("soundBtn");
-    function initAudio(){
-      if(audio) return;
-      audio=new Audio("audio/storm.mp3"); audio.loop=true; audio.volume=0.5;
-      audio.addEventListener("canplaythrough", function(){ audioOk=true; });
-      audio.addEventListener("error", function(){ audioOk=false; soundOn=false; refreshSoundBtn(); });
+    // Named sounds -> optional files under audio/. The game is fully playable
+    // silent; drop in any of these .mp3s and they light up automatically. A
+    // missing file is marked once and never retried, and NEVER changes the
+    // toggle state (this is what was freezing the button before).
+    var SFX = {
+      music:     { src:"audio/music.mp3",      loop:true,  vol:0.32 },
+      storm:     { src:"audio/storm.mp3",      loop:true,  vol:0.45 },
+      thunder:   { src:"audio/thunder.mp3",    loop:false, vol:0.60 },
+      step:      { src:"audio/step.mp3",       loop:false, vol:0.22 },
+      bump:      { src:"audio/bump.mp3",       loop:false, vol:0.40 },
+      button:    { src:"audio/button.mp3",     loop:false, vol:0.50 },
+      door:      { src:"audio/door.mp3",       loop:false, vol:0.50 },
+      page:      { src:"audio/page.mp3",       loop:false, vol:0.55 },
+      checkpoint:{ src:"audio/checkpoint.mp3", loop:false, vol:0.50 },
+      ladder:    { src:"audio/ladder.mp3",     loop:false, vol:0.50 },
+      vtgm:      { src:"audio/vtgm-alert.mp3", loop:false, vol:0.60 },
+      hum:       { src:"audio/vtgm-hum.mp3",   loop:true,  vol:0.00 }, // volume tracks her proximity
+      win:       { src:"audio/win.mp3",        loop:false, vol:0.60 },
+      caught:    { src:"audio/caught.mp3",     loop:false, vol:0.60 }
+    };
+    var LOOPS = ["music","storm","hum"];
+    var sfxEl = {};
+    function getSfx(name){
+      if(sfxEl[name]) return sfxEl[name];
+      var d=SFX[name]; if(!d) return null;
+      var a=new Audio(d.src); a.loop=!!d.loop; a.volume=d.vol;
+      a.addEventListener("error", function(){ a._missing=true; });
+      sfxEl[name]=a; return a;
     }
+    function playSfx(name){
+      if(!soundOn) return;
+      var a=getSfx(name); if(!a || a._missing) return;
+      try{ if(!a.loop) a.currentTime=0; var p=a.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){}
+    }
+    function stopSfx(name){ var a=sfxEl[name]; if(a){ try{ a.pause(); }catch(e){} } }
     function refreshSoundBtn(){ soundBtn.innerHTML = soundOn ? "🔊" : "🔈"; soundBtn.classList.toggle("off", !soundOn); }
     function toggleSound(){
-      soundOn=!soundOn; initAudio();
-      if(soundOn){ audio.play().catch(function(){ soundOn=false; refreshSoundBtn(); }); }
-      else if(audio){ audio.pause(); }
-      refreshSoundBtn();
+      soundOn=!soundOn; refreshSoundBtn();
+      if(soundOn){ LOOPS.forEach(function(n){ var a=getSfx(n); if(a&&!a._missing){ var p=a.play(); if(p&&p.catch) p.catch(function(){}); } }); }
+      else { LOOPS.forEach(stopSfx); }
     }
     soundBtn.addEventListener("click", toggleSound);
     document.getElementById("restartBtn").addEventListener("click", function(){ clearSave(); location.reload(); });
@@ -1178,7 +1227,10 @@
       invuln=RESPAWN_GRACE;
       running=true;
     }
-    document.getElementById("startBtn").addEventListener("click", startGame);
+    document.getElementById("startBtn").addEventListener("click", function(){
+      fadeEl.style.opacity="1";                                  // fade the menu to black...
+      setTimeout(function(){ startGame(); requestAnimationFrame(function(){ fadeEl.style.opacity="0"; }); }, 460); // ...then fade into the game
+    });
     document.getElementById("againBtn").addEventListener("click", function(){ clearSave(); location.reload(); });
 
     /* =========================================================================

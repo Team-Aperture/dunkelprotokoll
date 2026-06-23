@@ -107,6 +107,22 @@ function genFloor(W,H,seed,slots){
     if(used.has(k)||(x===entry.x&&y===entry.y)||(x===cp.x&&y===cp.y)||!closedReach[k]) continue;
     const dd=dist[k]||0; if(dd>efar){ efar=dd; enemySpot={x:x,y:y}; } }
 
+  // Two spread-out safe refuges the V-TGM can't enter (escapability).
+  let safe=[];
+  let scand=[];
+  for(let y=1;y<H;y+=2) for(let x=1;x<W;x+=2){ const k=key2(x,y);
+    if(used.has(k)||(x===entry.x&&y===entry.y)||(x===cp.x&&y===cp.y)||!closedReach[k]) continue;
+    if(enemySpot && x===enemySpot.x && y===enemySpot.y) continue;
+    scand.push({x,y}); }
+  if(scand.length){
+    scand.sort((a,b)=>(dist[key2(b.x,b.y)]||0)-(dist[key2(a.x,a.y)]||0));
+    safe.push(scand.shift());
+    if(scand.length){ let best=-1,bi=0;
+      scand.forEach((c,i)=>{ const md=Math.min.apply(null,safe.map(s=>Math.abs(s.x-c.x)+Math.abs(s.y-c.y)));
+        if(md>best){best=md;bi=i;} });
+      safe.push(scand.splice(bi,1)[0]); }
+  }
+
   let facing=1;
   if(isFloor(entry.x+1,entry.y)) facing=1; else if(isFloor(entry.x,entry.y+1)) facing=2;
   else if(isFloor(entry.x-1,entry.y)) facing=3; else facing=0;
@@ -128,7 +144,7 @@ function genFloor(W,H,seed,slots){
   if(errs.length) return null;
 
   return { grid:g.map(r=>r.join("")), w:W, h:H, spawnFacing:facing, entry, target,
-    doors:[door], buttons:[button], pages, checkpoint:cp, enemySpot:enemySpot,
+    doors:[door], buttons:[button], pages, checkpoint:cp, enemySpot:enemySpot, safe:safe,
     pathLen:dist[key2(target.x,target.y)]||0 };
 }
 
@@ -159,6 +175,8 @@ function buildAll(){
       exit: isLast ? {x:f.target.x, y:f.target.y} : null,
       // V-TGM hunter on floors 2+ (floor 1 is a calm intro). i>=1 -> one per floor.
       enemies: (i>=1 && f.enemySpot) ? [{x:f.enemySpot.x, y:f.enemySpot.y, id:"e0"}] : [],
+      // safe refuges (she can't enter) on the hunter floors only
+      safe: (i>=1) ? (f.safe||[]) : [],
       _pathLen:f.pathLen, _seed:f.seed,
     };
   });
