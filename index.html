@@ -281,6 +281,14 @@
 
     var MMAP_CELLS = 5;               // minimap shows a small NxN window centered on the player (short range)
 
+    // V-TGM hunter (the corrupted maintenance unit). Catch = reset to checkpoint.
+    var ENEMY_STEP      = 0.46;       // seconds per grid step while patrolling (player step = MOVE_DURATION)
+    var ENEMY_HUNT_STEP = 0.36;       // seconds per grid step while hunting (faster, but you're still quicker)
+    var ENEMY_DETECT    = 6;          // starts hunting when within this many corridor-cells (path distance)
+    var ENEMY_LOSE_TIME = 5.0;        // seconds out of range before she gives up the hunt
+    var ENEMY_CATCH_DIST= 0.55;       // catch radius in cells
+    var RESPAWN_GRACE   = 1.8;        // seconds of invulnerability after a respawn
+
     var BG = 0x17191d;
     var BEAT = 60 / BPM;
     var reducedMotion = window.matchMedia &&
@@ -320,40 +328,42 @@
       "lMHlFbV0BDDgEPflceW0dAUgEDGxtJVVxAaVIeUAVQC0dDVxNLCEMWTltWUgFmDExRVF9cUAYQ" +
       "TVFNHF1pGE5CDh1FR0hEQkUVEw8LQ11HFWYIQhBHFFJIXlhNEk1WXWcWBVVASBMVQFdCRQANAR" +
       "hDXVcBZhMcCgJOSlBaVhI2Q04PI1EPWhIdWAsGV1QcURlMVlBUSQ89V1RaGEBSBx9WVQUaAABn" +
-      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNAThREDUUKPlQLUE9fV0FNTDMSAgBJZk" +
-      "9fWhhAC1ABFQIOTVZODnYpfydSA0deVxlFSVNfQEMPRxd1QkJJFhwRBQEyDggGAgtpDl4dQBVD" +
-      "DBZXVDxRQk1PQkRGDmdWTUhGT1NRTFdMSExPTmcWTx9BXB9LXFtNSVBPQEJPSUsDaltNSUlOU1" +
-      "xMWkxITEJPZRdCEkFREkZcVkBEUU1MT09JSw5qVkBIS0JeUUFaQUhBT0JoFkATQVESRlFbTUlQ" +
-      "T01PQklGA2dbTUVGTlxQTFpMRUFCQmUXQhJMXB9GXFZARF1CTEBDREsOalZNSEZPU1FBV0xIQU" +
-      "9CaBdPE05QEktRW0BJXU9AQk9JRgNqW01FS0JTUENWTEVMT09oF08SQVESRlxWTURdQkBPQ0tH" +
-      "DmpbQEVLQl5RQVpBSEFPQmUaTx9BUB1HUVtNRFBCTUJCSUYDZ1tNSEZPU1xMVkNJTEJPZRpCEk" +
-      "xcH0ZcVkBEXU8tQk9ERwFmVkBIS09eUUxXTEhBT0JoGk8SQVwSR15XTUldT01CQklLA2dbTUVL" +
-      "QlNcQVpMSUNOT2UXTxJMUR9GXFZNRFBCTU9PREYOZllMSEtCXlFBWkFIQUJCZRpCH0xcH0tRV0" +
-      "JFUEJNT0JERg5nVk1IRk9TUUxXTEhMTjFnFgheDQBCR0guFUULQ1RdUEtHVGZPX1lJThkWTU5N" +
-      "D15OERYYTlMXBkUKHAZMXSgaTBRDXVwBZgxMUVVAUhsLVlVJDV1OZxYDQQccQkdILkwDQkMzET" +
-      "xLR10lEgsYR1YrCU0MTVFeQE4yFlYETlBYAVBPTBdAQ0JOEgsKWWZPXUdHCgITCFZVSVxOEWdP" +
-      "TklASABcXlcXRUlQW0BDDgEPflceX0dAUgEDGxtJVVhAaVIeUAVQC0dFVxNLCEMWTltUSQ89V1" +
-      "RaUEBSGwtWVUkfWU5nFh9dDQYTX0dZTAEBAAlOW0VXDzkoQkkGBBURBAQAAgEYTnFPTklASABS" +
-      "XlcXRUlQXxFNRRBdZk8VSR1OSkNDVhZJVV0RZxYIXhUcE18JVxZFSVBfQEMeRxd1RhNHRwkIGx" +
-      "tWVQUaAABnFjNBAwZZKRcbTF1CUF5AQzgWSCERTFFXXg1eFFYBCgIJTnEWKXMnPHRFQVdCRQRD" +
-      "VF5SS0dFZk9fUklOAwIOAwEtDg8FJVNOC1BeEwIAHApFSTpMT0JERg5nVk1IRk9TUUxXTEhMT0" +
-      "9oF08TTlASS1FbQCJQT0BCT0lLA2dbQEVLQlNcTFZDSUxCT2UXTxJMUR9GUVZNRF1CQE9PREsO" +
-      "ZllMSEtPXlFBWkFIQUJCZRpCH0FcEktcW01FX0NNQkJJRgNnVk1IRk9TUUxXTEVMT09oF04dQF" +
-      "EfRlxbQEldQkBCT0lLA2pbQEhLQl5RTVhNSEFPT2gXTx9BXBJGUVZNRFBPTUJCSUYPaFdNRUtC" +
-      "XlxMWkxFQUJCZRpCEkxRH0ZcVkxLUUJNT0JESw5nVk1IRk9TUUFXTEhBT0JoFkATQVwfS1FbQE" +
-      "ldT01CT0lGA2pbTUVGQlNQQ1ZMRUxPT2gXTxJMUR9GXFZNRF1CQE9PREcBZlZARUtCXlFBWkFI" +
-      "QU9CZRpPH0xcEktRV0JFUE9NT0JJRgNnVk1FRk9TXExXTEhMQk9pGE4STFEfRlxbQERdT0BCT0" +
-      "QmA2pbQEVLT1JeTVdBSEFPT2gXTx9BURJLUVZNRFBCTUJCRUkPZ1tARUtCU1xBWkFFTEJCZRpC" +
-      "H0xRH0ZQWUxEUEJNT09ERg5nVk1IRk9TUUxXQUhBT05nFk8fTFwfS1xbQEldT0BCT0lLA2pbTU" +
-      "VGTlxQTFdMSExPT2gXTxJBURJGUVZNRFBCTU9DOkkPIBoBGRZOSikUVhdJVVhAaU1OC1NeEwwW" +
-      "V1RFF1BMETxLR08xARoECx9SSDQPTRNNVl1/GE5IQEgASVAcCkVJQwxdQ0tHQjQQABhHVitQC0" +
-      "VNNhIxQGlEDVYHARNfKQ5MH1FbWUBDHkcXc1lMAgFOSlAfQk1HTR8AJEBOC1ReEwMAFAlFSUNa" +
-      "ThxLHg88V1RZVEBSC01OXlxDTgUvFlYTEkUTSVAGAggHQ1RbTUUDXyUSTFFHXFIPQw9NE01WXn" +
-      "oYTkhASABJUBwKRUlDHlRDS0deKBoaSV9UXFAJBg4MTVZOfRYRHRlQSUdIREJFCkNUXVZLR0Qg" +
-      "V1RJFVVSXk0HAwQbTlZyGE5XEBNWR0hXV0UOPEJOAg8ATi8FAQILGFJIFFYXSVVdWWcWFRNYQw" +
-      "IYXlcbF1FbFU4ZRV8caFcXSV9dDV5NEAAcAU5WJUEAXU5QVB0bAUxdCEMWTltSSQ89V1RaGEBS" +
-      "LR8VGwMjCQJpDl0EVF4TOgEQCwNRW11fHDpJDycaARkBOBUfHxgOHwpOVml6TAVbsIFFCQgVGl" +
-      "0aExccHBgNZDBOW1RessJPDxIQEkIXNk8RSh9QTA==";
+      "FgheFRwTXwlXFkVJVEJOGEVfHjlZTA4dBQRQVRoaBwNATi5aCVwLF0JHSC4zS1E+Hg0VDylIKl" +
+      "dUWlVeXFAwBwoOC05WegURHRlQXwQfEExdUSQsKS8iRR9mWUwcR1ZCQ0NWB0lVXVtnFh9BAwVf" +
+      "IxMWBwkUQ1ReTUUCXy0RTFE+TlNRTFdMSExPT2gXTxJBURJGUVZNRFFNTE9PREsDaltASEtPXl" +
+      "xBWkFFQUJCaBZAE0FcEktRVk1JUE9NQkJERg5nW01FRk5cUExaQUVMQk9lF0IfTFEfS1xWQERd" +
+      "QkxAQ0RGDmdWQEhLT15RTFdBSEFPQmgaTxNOUBJLUVtASV1PTUJCSUsDZ1tNRUZCU1BDVkxFTE" +
+      "JPaBdPEkFRH0ZRVkBEXUJNT0NLRw5qVkBFS0JeXEFaQUhBQkJoGkIfQVAdR1FbTURQQk1PQkRG" +
+      "DmdbTUhGQlNcTFZDSUxCQmUaQh9MUR9LXFZARF1PQE9PREcBZlZASEZPU1FBV0FIQU9CaBdPEk" +
+      "FcEkdeV01JUE9AQkJJSwNnW01FRkJeMUFaTElDTk9lF0ISTFESRlFWQERdQkBPQkRLDmZZTEhL" +
+      "Ql5RQVdBRUFPQmgaQh9BXB9LUVdCRVBPTU9CSUYDZ1tNSEZPU1FMWkxITE5AaRdCH0xRH0tcVk" +
+      "BJXU9AQk9JSwNqVkxHR09TUUxXTEhMT09oF08SQVESRlFWTUUuTUwIDggXXmZPNRBHFFJIXkVD" +
+      "SRZOVnoGQBMLFhNfUBFfRQ48Qk4DEhFZKxsdSV83C1AXVlVSQ04VaQ5cHUAbVUdIVwxWUU1MAx" +
+      "ECC15mTzVJAV1SLxIpQ0kfDQsuR04LOQkTHVBPX0tRGExWVEtHRCBXVEkVX1JeTQcDBBtOVngY" +
+      "TlcQE1ZHSFddRQ5NFU4ZRV8cfVlMEkdWQUdDVgYPTVZOOwBOHUABXQoGV1RTX0MIHgAARxdmQk" +
+      "wWSRdSCk1OXEdNFU5xBVkdQBtVR0hXHlJRTUwfDQgRD35AQkkDHhEVTU5NWU0RMWcWD1kHEVoV" +
+      "HRwAE1FbFU4ZRV8cc1lMEkdWQUMSWE0eH05WMBYUE1hDHUcLV1RWDk1MCA4QCw9+DkwTR1ZBQ0" +
+      "NWFklVXV82GE5UGhtFR0gbGwsfTUwJDwIIRCEGTFE+F1IKTU5eWkNOFWkOXQBOUFgBUE9MAkND" +
+      "EzFNRTpdJQEGJwACUkheRV9HTTMfLlEIE1hAAxheDkwJEgwLTltFIG8BOytLVk5cUBhWVVlcQE" +
+      "4jFlYAW14TFgIUGQk1AA0FDwBHF3ZZTAwXBRRQVS9NSExPT2gXTxJBURJGUVZNRFBCTU9CREYP" +
+      "aFdNRUZCXjdMWkFFQUJCZRdCH0xcH0ZcVkxLUUJAT09ERg5qVkBIRk9TUUFXQUhBT0JoFkATQV" +
+      "wSS1FbQElQT0BCT0lLA2dbTUVLQlNQQ1ZMRUxCT2UXTxJBURJGUVZNRF1CTU9CREcBZlZASEtC" +
+      "XlxBV0FFQUJCZRpCH0FcH0tRV0JFUE9NT0JERgNnW01IRk9TUUxaTEVMQk9pGE4STFwfS1xWQE" +
+      "RdT0BCT0lLDmpWQEhLT1JeTVdMSExPQmgXTxJBURJGUVtNRFBPTUJCRUkPZ1tARUZCXlxBWkxF" +
+      "QUJPZRpCEkxRH0ZQWUxEXUJNT0JERg5qVkBIS09TUUFXQUhBT05nFk8fTFwfS1FbQElQT01CT0" +
+      "lGA2pbTUVGTlxQTFpMSExCT2UXTxJMURJGXFZNRFBCQE9DS0cOalZASEtCXlFBWkFFQU8vZRpC" +
+      "H0xcEkdeV01JUE9NT0JERgNnVk1FRk9TUUxXTEVMTkBpF0IfTFwfRlxbQEldQkBCT0lLA2pWQE" +
+      "hHQFJRTFdMSEFPT2gXTxJBURJGUVZNSVBPTU5NRUYDaltARUtCXlxBWkFFQUJCZRpCEkxRE0lQ" +
+      "Vk1EUEJNT0JERg5nVk1IRk9TUUxXTEhNMUBpUANeEAETXykOTB9RW1pAQx5HF3VZTAIBTkpQC0" +
+      "VNFjJATilBGEUNHEJHSC4VRQtDVF1VS0dUZk9fR0cFFFBVVg1aTUBOJEQJXxFQCz5QEV9FLhwz" +
+      "QEMXBEohBkxRPhdSCk1OWEdNFU5xA0ATCxYTX1AFWEVfQx0ADhNHF3JZTA0XDRdQVVZbSRJAF2" +
+      "lMTgtQQx1HC1dUVkRNTAUFRV8PNEJMR0cfHB0bVlVcQ04KOVULE1hQAUcPWRVFC0NUXlBLR1Rm" +
+      "T19HRwUUUFVWH1NNQE44WANFQEgJSVATHAYUQ1ROV0UYAT9XFklfXVxQFlZVWlhATiJQTgtAAg" +
+      "hHXlcdCxwVTFZYS0dLNhQJSV9OSVASKUNJDAQJKF8cXgscRUdIDkwfUVtfWU1FHA9+RF0WSU4F" +
+      "Ak1OFEkXTlZ6GE5IQEgAGF5XCggED0xWDxIJQWhXCxMMGFJIFFYXSVVZQGlNTgtTDx1HFxsLCh" +
+      "oEHU5bPB4PPFdUWElOCVBVRUNJBghOcRYJAUAPbElQKh4GBwkiCQ9FXxxxQ0JJOh8VFwtWVVhc" +
+      "ETFnFg9eDQBVMRcYHgsSFQtOW0UrDXBMrNtFFw0JEloUFhQRFzYUTHRCQgBXsMVOHA4aE0IaGh" +
+      "5QPwhMFg==";
 
     function decodeLevel(b64, key){
       var enc = new TextEncoder(), dec = new TextDecoder();
@@ -453,12 +463,43 @@
       return g;
     }
 
+    // The corrupted V-TGM maintenance unit: dome head, single glowing red eye,
+    // dark body, stubby legs, tube arms, a little sample beaker on her back.
+    // (Eye faces local +Z; the group is rotated to face the player.)
+    function makeVTGM(){
+      var g=new THREE.Group();
+      var headMat=new THREE.MeshStandardMaterial({ color:0xcfcabf, roughness:0.45, metalness:0.25 });
+      var darkMat=new THREE.MeshStandardMaterial({ color:0x16181c, roughness:0.6,  metalness:0.45 });
+      var redMat =new THREE.MeshStandardMaterial({ color:0x330505, emissive:0xff4a4a, emissiveIntensity:1.5 });
+      var redAcc =new THREE.MeshStandardMaterial({ color:0x220404, emissive:0xff4a4a, emissiveIntensity:0.8 });
+      var body=new THREE.Mesh(new THREE.SphereGeometry(0.5,18,14), darkMat); body.position.y=0.66; body.scale.set(1,0.92,1); g.add(body);
+      var head=new THREE.Mesh(new THREE.SphereGeometry(0.46,20,16), headMat); head.position.y=1.2; g.add(head);
+      var eye=new THREE.Mesh(new THREE.CircleGeometry(0.21,24), redMat); eye.position.set(0,1.22,0.45); g.add(eye);
+      var eyeGlow=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,10), redMat); eyeGlow.position.set(0,1.22,0.46); g.add(eyeGlow);
+      var legGeo=new THREE.CylinderGeometry(0.1,0.12,0.42,8);
+      [-0.2,0.2].forEach(function(x){ var l=new THREE.Mesh(legGeo,darkMat); l.position.set(x,0.21,0); g.add(l); });
+      [-1,1].forEach(function(side){
+        var a=new THREE.Group();
+        var up=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.5,8), darkMat); a.add(up);
+        var band=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.08,8), redAcc); band.position.y=0.18; a.add(band);
+        a.position.set(side*0.5,0.8,0); a.rotation.z=side*0.55; g.add(a);
+      });
+      var beaker=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.34,10),
+        new THREE.MeshStandardMaterial({ color:0x0e2a33, emissive:0x3fb0c8, emissiveIntensity:0.7, transparent:true, opacity:0.85 }));
+      beaker.position.set(0.16,1.02,-0.4); g.add(beaker);
+      var eyeLight=new THREE.PointLight(0xff4a4a, 0.9, CELL*2.8, 2.0); eyeLight.position.set(0,1.22,0.25); g.add(eyeLight);
+      return { group:g, eyeMat:redMat, eyeLight:eyeLight };
+    }
+
     /* =========================================================================
        CURRENT-FLOOR RUNTIME STATE  (reassigned by loadFloor)
        ========================================================================= */
     var curFloor = 0, floorRoot = null;
     var grid, W, H, doors, buttons, pages, exitCell, checkpoint, upCell, downCell, seen;
-    var beam = null;   // exit beam material holder for pulsing (last floor only)
+    var beam = null;     // exit beam material holder for pulsing (last floor only)
+    var enemies = [];    // V-TGM hunters on the current floor
+    var invuln = 0;      // post-respawn grace timer (seconds)
+    var huntActive = false; // any enemy currently hunting (for ambience/telegraph)
 
     function isWall(x,y){ return x<0||y<0||x>=W||y>=H || grid[y][x]==='#'; }
     function doorAt(x,y){ for(var i=0;i<doors.length;i++) if(doors[i].x===x&&doors[i].y===y) return doors[i]; return null; }
@@ -572,6 +613,14 @@
       // ladders
       if(downCell){ var ld=makeLadder("down"); ld.position.set(cw(downCell.x),0,cw(downCell.y)); floorRoot.add(ld); }
       if(upCell){ var lu=makeLadder("up"); lu.position.set(cw(upCell.x),0,cw(upCell.y)); floorRoot.add(lu); }
+
+      // V-TGM hunters (reset to their spawn cells each time the floor loads)
+      enemies = (F.enemies||[]).map(function(en){
+        var v=makeVTGM(); v.group.position.set(cw(en.x),0,cw(en.y)); floorRoot.add(v.group);
+        return { cx:en.x, cy:en.y, wx:cw(en.x), wz:cw(en.y), tx:en.x, ty:en.y,
+                 moving:false, t:0, dur:ENEMY_STEP, state:"patrol", lose:0,
+                 lastSeen:null, prev:null, model:v }; });
+      huntActive=false;
 
       // place player
       player.cx=pos.x; player.cy=pos.y; player.facing=facing;
@@ -866,6 +915,109 @@
     }
 
     /* =========================================================================
+       V-TGM HUNTER  (grid pathfinding, detection, catch -> checkpoint reset)
+       ========================================================================= */
+    function bfsPath(sx,sy,tx,ty){
+      if(sx===tx&&sy===ty) return [{x:sx,y:sy}];
+      var key=function(x,y){return x+","+y;};
+      var prev={}, seenb={}; seenb[key(sx,sy)]=true;
+      var q=[{x:sx,y:sy}], head=0;
+      while(head<q.length){
+        var c=q[head++];
+        for(var i=0;i<DIRS.length;i++){
+          var nx=c.x+DIRS[i].dx, ny=c.y+DIRS[i].dy, k=key(nx,ny);
+          if(seenb[k]||isBlocked(nx,ny)) continue;
+          seenb[k]=true; prev[k]={x:c.x,y:c.y};
+          if(nx===tx&&ny===ty){
+            var path=[{x:nx,y:ny}], cur=k;
+            while(prev[cur]){ var p=prev[cur]; path.unshift({x:p.x,y:p.y}); cur=key(p.x,p.y); }
+            return path;
+          }
+          q.push({x:nx,y:ny});
+        }
+      }
+      return null;
+    }
+    function randomStep(e){
+      var opts=[], i;
+      for(i=0;i<DIRS.length;i++){ var nx=e.cx+DIRS[i].dx, ny=e.cy+DIRS[i].dy;
+        if(isBlocked(nx,ny)) continue;
+        if(e.prev && nx===e.prev.x && ny===e.prev.y) continue; // avoid immediate backtrack
+        opts.push({x:nx,y:ny}); }
+      if(!opts.length){ for(i=0;i<DIRS.length;i++){ var ax=e.cx+DIRS[i].dx, ay=e.cy+DIRS[i].dy;
+        if(!isBlocked(ax,ay)) opts.push({x:ax,y:ay}); } }
+      if(!opts.length) return {x:e.cx,y:e.cy};
+      return opts[(Math.random()*opts.length)|0];
+    }
+    function startStep(e,next,dur){
+      e.prev={x:e.cx,y:e.cy};
+      e.fromX=e.wx; e.fromZ=e.wz; e.toX=cw(next.x); e.toZ=cw(next.y);
+      e.tx=next.x; e.ty=next.y; e.t=0; e.dur=dur; e.moving=true;
+    }
+    var lastDetectToast=-999;
+    function onDetect(){
+      if(elapsed-lastDetectToast>6){ lastDetectToast=elapsed; toast("⚠ DU WIRST GEJAGT","bad",1800); }
+      pulseVignette();
+    }
+    function thinkEnemy(e){
+      var path=bfsPath(e.cx,e.cy,player.cx,player.cy);
+      var pd = path ? path.length-1 : Infinity;
+      if(pd<=ENEMY_DETECT){
+        if(e.state!=="hunt") onDetect();
+        e.state="hunt"; e.lose=0; e.lastSeen={x:player.cx,y:player.cy};
+      } else if(e.state==="hunt"){
+        e.lose += e.dur; if(e.lose>ENEMY_LOSE_TIME){ e.state="patrol"; e.lastSeen=null; }
+      }
+      var next;
+      if(e.state==="hunt"){
+        var tp = (pd<Infinity)? path : (e.lastSeen? bfsPath(e.cx,e.cy,e.lastSeen.x,e.lastSeen.y) : null);
+        next = (tp && tp.length>1)? tp[1] : randomStep(e);
+      } else { next = randomStep(e); }
+      startStep(e, next, e.state==="hunt"?ENEMY_HUNT_STEP:ENEMY_STEP);
+    }
+    function updateEnemies(dt){
+      if(invuln>0) invuln-=dt;
+      huntActive=false;
+      for(var i=0;i<enemies.length;i++){
+        var e=enemies[i];
+        if(e.moving){
+          e.t+=dt/e.dur; var k=Math.min(e.t,1);
+          e.wx=e.fromX+(e.toX-e.fromX)*k; e.wz=e.fromZ+(e.toZ-e.fromZ)*k;
+          if(e.t>=1){ e.moving=false; e.cx=e.tx; e.cy=e.ty; e.wx=e.toX; e.wz=e.toZ; }
+        }
+        if(!e.moving) thinkEnemy(e);
+        if(e.state==="hunt") huntActive=true;
+
+        var g=e.model.group;
+        var bob=Math.sin(elapsed*(e.state==="hunt"?7:3)+i)*0.05;
+        var jit=(e.state==="hunt"&&!reducedMotion)?(Math.random()-0.5)*0.03:0; // corrupted twitch
+        g.position.set(e.wx+jit, bob, e.wz+jit);
+        var dx=cam.x-e.wx, dz=cam.z-e.wz;
+        g.rotation.y=Math.atan2(dx,dz);
+        var pulse=e.state==="hunt"?0.6*Math.abs(Math.sin(elapsed*9)):0.25*Math.abs(Math.sin(elapsed*2.5));
+        e.model.eyeMat.emissiveIntensity=(e.state==="hunt"?2.2:1.1)+pulse;
+        e.model.eyeLight.intensity=(e.state==="hunt"?1.5:0.8)+pulse*0.5;
+
+        if(invuln<=0){ var cdx=cam.x-e.wx, cdz=cam.z-e.wz, R=CELL*ENEMY_CATCH_DIST;
+          if(cdx*cdx+cdz*cdz < R*R){ caught(); return; } }
+      }
+    }
+    function caught(){
+      if(invuln>0 || transitioning || !running) return;
+      transitioning=true; anim=null; inputBuffer=null;
+      pulseVignette();
+      var cp = lastCheckpoint || { floor:0, x:player.cx, y:player.cy, facing:player.facing };
+      toast("ERFASST — zurück zum Kontrollpunkt","bad",2600);
+      fadeEl.style.opacity="1";
+      setTimeout(function(){
+        loadFloor(cp.floor, {x:cp.x, y:cp.y}, cp.facing);
+        invuln=RESPAWN_GRACE; saveGame();
+        fadeEl.style.opacity="0";
+        setTimeout(function(){ transitioning=false; }, 360);
+      }, 360);
+    }
+
+    /* =========================================================================
        INPUT
        ========================================================================= */
     function act(a){
@@ -937,6 +1089,8 @@
       }
       for(var i=fx.length-1;i>=0;i--){ if(fx[i](dt)) fx.splice(i,1); }
 
+      if(running && !transitioning) updateEnemies(dt);
+
       if(doors) doors.forEach(function(d){ if(d.mesh && d.open && d.mesh.position.y>d.openY){
         d.mesh.position.y=Math.max(d.openY, d.mesh.position.y - dt*(CELL*1.7)); } });
 
@@ -991,6 +1145,9 @@
         var s=findChar(FLOORS[0],'S') || {x:1,y:1};
         loadFloor(0, s, FLOORS[0].spawnFacing||0);
       }
+      // ensure a respawn anchor exists even before the first checkpoint is reached
+      if(!lastCheckpoint) lastCheckpoint={ floor:player.cx!==undefined?curFloor:0, x:player.cx, y:player.cy, facing:player.facing };
+      invuln=RESPAWN_GRACE;
       running=true;
     }
     document.getElementById("startBtn").addEventListener("click", startGame);

@@ -100,6 +100,13 @@ function genFloor(W,H,seed,slots){
     const diff=Math.abs((dist[k]||0)-maxD*0.5); if(diff<bestDiff){bestDiff=diff; cp={x,y};} }
   if(!cp) return null;
 
+  // V-TGM spawn: farthest door-closed-reachable cell from the entry (shares the
+  // player's space, but starts far away). buildAll decides which floors get one.
+  let enemySpot=null, efar=-1;
+  for(let y=1;y<H;y+=2) for(let x=1;x<W;x+=2){ const k=key2(x,y);
+    if(used.has(k)||(x===entry.x&&y===entry.y)||(x===cp.x&&y===cp.y)||!closedReach[k]) continue;
+    const dd=dist[k]||0; if(dd>efar){ efar=dd; enemySpot={x:x,y:y}; } }
+
   let facing=1;
   if(isFloor(entry.x+1,entry.y)) facing=1; else if(isFloor(entry.x,entry.y+1)) facing=2;
   else if(isFloor(entry.x-1,entry.y)) facing=3; else facing=0;
@@ -121,7 +128,8 @@ function genFloor(W,H,seed,slots){
   if(errs.length) return null;
 
   return { grid:g.map(r=>r.join("")), w:W, h:H, spawnFacing:facing, entry, target,
-    doors:[door], buttons:[button], pages, checkpoint:cp, pathLen:dist[key2(target.x,target.y)]||0 };
+    doors:[door], buttons:[button], pages, checkpoint:cp, enemySpot:enemySpot,
+    pathLen:dist[key2(target.x,target.y)]||0 };
 }
 
 // Assemble the three floors, linking ladders.
@@ -149,6 +157,8 @@ function buildAll(){
       up:   i===0 ? null : {x:1,y:1},                 // arrive here when descending into this floor
       down: isLast ? null : {x:f.target.x, y:f.target.y}, // ladder to next floor (gated)
       exit: isLast ? {x:f.target.x, y:f.target.y} : null,
+      // V-TGM hunter on floors 2+ (floor 1 is a calm intro). i>=1 -> one per floor.
+      enemies: (i>=1 && f.enemySpot) ? [{x:f.enemySpot.x, y:f.enemySpot.y, id:"e0"}] : [],
       _pathLen:f.pathLen, _seed:f.seed,
     };
   });

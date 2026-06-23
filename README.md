@@ -28,11 +28,20 @@ python3 -m http.server 8000   # then open http://localhost:8000
 | Press button / interact | `Space` | center **DRUCK** button |
 | Use a ladder (change floor) | step onto it | step onto it |
 
-There is **no strafe** and **no death/reset** — navigation in the dark is the
-only challenge (a hunter enemy is a later planned pass). Progress spans all three
-floors. Checkpoint cells act as a **quiet autosave** (floor, position, opened
-doors, collected pages, explored map), so a refresh or accidental close resumes
-you there (`↻` top-right restarts from scratch).
+There is **no strafe**. Progress spans all three floors, and **checkpoint cells
+are respawn anchors**: step on one to set your respawn and quietly autosave
+(floor, position, opened doors, collected pages, explored map), so a refresh or
+accidental close resumes you there (`↻` top-right restarts from scratch).
+
+### The V-TGM (the hunter)
+
+From the second floor down, a **corrupted V-TGM maintenance unit** stalks the
+maze — a dome-headed robot with a single glowing **red eye** you'll catch in the
+dark before a flash even hits. She patrols until she senses you within a few
+corridor-cells, then **hunts** (eye flaring, faster). If she catches you, you're
+**reset to your last checkpoint** (progress kept, position lost) with a brief
+grace period. You move faster than she does — use the lightning and her eye-glow
+to slip past. Tune her in the constants block (`ENEMY_STEP`, `ENEMY_DETECT`, …).
 
 ### Seeing in the dark
 
@@ -102,9 +111,10 @@ Grid legend: `#` wall · `.` floor · `S` spawn · `E` exit · `C` checkpoint.
 
 ## Scope
 
-This is the **engine + three procedurally generated floors** linked by ladders.
-Tune floor size/difficulty via `FLOOR_SPECS` in the generator. A hunter enemy
-(the V-NTG) is the next planned pass.
+This is the **engine + three procedurally generated floors** linked by ladders,
+with the **V-TGM hunter** on the lower floors. Tune floor size/difficulty via
+`FLOOR_SPECS` (and which floors get a hunter) in the generator, and the hunter's
+behaviour via the `ENEMY_*` constants in `index.html`.
 
 ## A note on the source
 
