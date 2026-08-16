@@ -48,6 +48,22 @@ function genFloor(W,H,seed,slots){
     const [nx,ny,dx,dy]=opts[Math.floor(rng()*opts.length)];
     g[cy+dy/2][cx+dx/2]='.'; g[ny][nx]='.'; visited[key(nx,ny)]=true; stack.push([nx,ny]);
   }
+
+  // Braid: open some walls between already-connected THROUGH-cells, adding loops
+  // so there's always an alternate route to dodge the hunter. Dead-ends (deg 1)
+  // are never touched, so pages / safe pockets / door-gating stay intact.
+  const rawDeg=(x,y)=>{ let n=0; for(const [dx,dy] of N4){ const ax=x+dx,ay=y+dy;
+    if(ax>=0&&ay>=0&&ax<W&&ay<H&&g[ay][ax]!=='#') n++; } return n; };
+  const BRAID=0.20;
+  for(let y=1;y<H;y+=2) for(let x=1;x<W;x+=2){
+    for(const d of [[2,0],[0,2]]){
+      const bx=x+d[0], by=y+d[1]; if(bx>=W-1||by>=H-1) continue;
+      const wx=x+d[0]/2, wy=y+d[1]/2;
+      if(g[wy][wx]!=='#') continue;                       // already a passage
+      if(rawDeg(x,y)>=2 && rawDeg(bx,by)>=2 && rng()<BRAID) g[wy][wx]='.';  // open -> loop
+    }
+  }
+
   const at=(x,y)=>(x<0||y<0||x>=W||y>=H)?'#':g[y][x];
   const isFloor=(x,y)=>at(x,y)!=='#';
   const deg=(x,y)=>N4.reduce((n,[dx,dy])=>n+(isFloor(x+dx,y+dy)?1:0),0);
